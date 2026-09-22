@@ -1,0 +1,2038 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="CruciWord Creator: applicazione web per creare cruciverba normali, facilitati o crittografati, con suggerimenti e verifica delle parole.">
+<title>CruciWord Creator</title>
+<style>
+:root{
+  --sfondo:#f4f2ec;
+  --carta:#ffffff;
+  --inchiostro:#15181e;
+  --tenue:#5c6472;
+  --bordo:#ddd8cc;
+  --bordo-forte:#22262e;
+  --accento:#11487f;
+  --accento-tenue:#e6eefa;
+  --verde:#15734a;
+  --verde-tenue:#dff3e8;
+  --rosso:#ad2118;
+  --rosso-tenue:#fbe4e2;
+  --oro:#b8860b;
+  --oro-tenue:#fbf1d6;
+  --bloccata:#20242c;
+  --raggio:14px;
+  --ombra:0 1px 2px rgba(0,0,0,.05), 0 10px 30px rgba(0,0,0,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --sfondo:#12141a;
+    --carta:#1b1f27;
+    --inchiostro:#f2f3f5;
+    --tenue:#a6aebd;
+    --bordo:#333a46;
+    --bordo-forte:#5b6473;
+    --accento:#7fb2f0;
+    --accento-tenue:#1e2b3d;
+    --verde:#6ddba2;
+    --verde-tenue:#163227;
+    --rosso:#ff8a80;
+    --rosso-tenue:#3a1e1c;
+    --oro:#e8c25a;
+    --oro-tenue:#3a3020;
+    --bloccata:#050609;
+  }
+}
+:root[data-theme="dark"]{
+    --sfondo:#12141a;
+    --carta:#1b1f27;
+    --inchiostro:#f2f3f5;
+    --tenue:#a6aebd;
+    --bordo:#333a46;
+    --bordo-forte:#5b6473;
+    --accento:#7fb2f0;
+    --accento-tenue:#1e2b3d;
+    --verde:#6ddba2;
+    --verde-tenue:#163227;
+    --rosso:#ff8a80;
+    --rosso-tenue:#3a1e1c;
+    --oro:#e8c25a;
+    --oro-tenue:#3a3020;
+    --bloccata:#050609;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0;padding:0}
+body{
+  background:var(--sfondo);
+  color:var(--inchiostro);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+.contenitore{max-width:1180px;margin:0 auto;padding:0 16px}
+h1,h2,h3{line-height:1.2;margin:0 0 .4em}
+h1{font-size:clamp(1.7rem,4vw,2.5rem);letter-spacing:-.01em}
+h2{font-size:clamp(1.2rem,2.6vw,1.6rem)}
+h3{font-size:1.05rem;text-transform:uppercase;letter-spacing:.08em;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--tenue)}
+p{margin:0 0 1em}
+a{color:var(--accento)}
+
+/* Testata */
+.testata{
+  border-bottom:3px double var(--bordo-forte);
+  background:var(--carta);
+  padding:22px 0 18px;
+}
+.testata .contenitore{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 24px;justify-content:space-between}
+.marchio{display:flex;align-items:center;gap:12px}
+.logo{
+  width:46px;height:46px;flex:none;
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  border:2px solid var(--bordo-forte);gap:1px;background:var(--bordo-forte);
+}
+.logo i{background:var(--carta)}
+.logo i:nth-child(2),.logo i:nth-child(4),.logo i:nth-child(9){background:var(--bloccata)}
+.occhiello{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--tenue);margin:0 0 2px
+}
+.testata h1{margin:0}
+.sottotitolo{color:var(--tenue);max-width:46ch;margin:0;font-size:.98rem}
+
+main{padding:26px 0 60px}
+
+/* Carte */
+.carta{
+  background:var(--carta);
+  border:1px solid var(--bordo);
+  border-radius:var(--raggio);
+  box-shadow:var(--ombra);
+  padding:22px;
+  margin-bottom:22px;
+}
+
+/* Creazione guidata */
+.tappe{
+  display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0 0 20px;padding:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.82rem;
+}
+.tappe li{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--bordo);color:var(--tenue);background:transparent;
+}
+.tappe li b{
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  background:var(--bordo);color:var(--inchiostro);font-size:.78rem;flex:none;
+}
+.tappe li.attiva{border-color:var(--accento);color:var(--accento);background:var(--accento-tenue)}
+.tappe li.attiva b{background:var(--accento);color:#fff}
+.tappe li.fatta b{background:var(--verde);color:#fff}
+
+.passo{display:none;animation:entra .22s ease}
+.passo.visibile{display:block}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.passo p.guida{color:var(--tenue);font-size:.95rem;max-width:70ch}
+
+.scelte{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin:16px 0}
+.scelta{
+  position:relative;border:1px solid var(--bordo);border-radius:12px;padding:14px;cursor:pointer;
+  transition:border-color .15s,background .15s,transform .15s;background:transparent;
+}
+.scelta:hover{transform:translateY(-2px);border-color:var(--accento)}
+.scelta input{position:absolute;opacity:0;pointer-events:none}
+.scelta .titolo{font-weight:700;display:block;margin-bottom:2px}
+.scelta .nota{font-size:.85rem;color:var(--tenue);display:block;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.scelta:has(input:checked){border-color:var(--accento);background:var(--accento-tenue);box-shadow:inset 0 0 0 1px var(--accento)}
+.scelta:has(input:focus-visible){outline:3px solid var(--accento);outline-offset:2px}
+
+label.campo{display:block;margin:14px 0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.9rem;color:var(--tenue)}
+label.campo span{display:block;margin-bottom:6px;font-weight:600;color:var(--inchiostro)}
+input[type=text],textarea,select{
+  width:100%;padding:10px 12px;border:1px solid var(--bordo);border-radius:10px;
+  background:var(--sfondo);color:var(--inchiostro);font:inherit;font-size:.98rem;
+}
+textarea{min-height:130px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;line-height:1.5}
+input[type=range]{width:100%;accent-color:var(--accento)}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accento);outline-offset:1px}
+
+.navigazione{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:20px;border-top:1px solid var(--bordo);padding-top:16px}
+
+/* Pulsanti */
+button{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:.92rem;font-weight:600;
+  padding:10px 16px;border-radius:10px;border:1px solid var(--bordo-forte);
+  background:var(--carta);color:var(--inchiostro);cursor:pointer;
+  transition:background .15s,color .15s,transform .1s;
+}
+button:hover{background:var(--accento-tenue)}
+button:active{transform:translateY(1px)}
+button:focus-visible{outline:3px solid var(--accento);outline-offset:2px}
+button.principale{background:var(--accento);border-color:var(--accento);color:#fff}
+button.principale:hover{filter:brightness(1.08)}
+button[disabled]{opacity:.45;cursor:not-allowed}
+button.tenue{border-color:var(--bordo);color:var(--tenue)}
+
+/* Tavolo di gioco */
+.intestazioneGioco{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:6px}
+.titoloCruciverba{font-size:clamp(1.3rem,3vw,1.9rem);margin:0}
+.dettagli{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.85rem;color:var(--tenue);margin:0}
+.contatori{display:flex;gap:18px;flex-wrap:wrap;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.contatore{text-align:center}
+.contatore b{display:block;font-size:1.25rem;line-height:1.1}
+.contatore span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue)}
+
+.strumenti{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding-top:16px;border-top:1px solid var(--bordo)}
+.strumenti button{padding:8px 12px;font-size:.86rem}
+
+.tavolo{display:grid;grid-template-columns:minmax(0,auto) minmax(280px,1fr);gap:24px;align-items:start}
+.tavolo.senzaDefinizioni{grid-template-columns:1fr}
+@media (max-width:900px){.tavolo{grid-template-columns:1fr}}
+
+.telaio{overflow:auto;padding:4px}
+.griglia{
+  display:grid;gap:0;background:var(--bordo-forte);
+  border:3px solid var(--bordo-forte);width:max-content;margin:0 auto;
+}
+.cella{position:relative;width:var(--lato);height:var(--lato);background:var(--carta)}
+.cella.vuota{background:var(--bloccata)}
+.cella input{
+  width:100%;height:100%;border:0;border-radius:0;padding:0;
+  text-align:center;text-transform:uppercase;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:calc(var(--lato) * .56);font-weight:700;
+  background:transparent;color:var(--inchiostro);caret-color:var(--accento);
+}
+.cella input:focus{outline:0}
+.cella{box-shadow:inset 0 0 0 1px var(--bordo)}
+.cella.parola{background:var(--accento-tenue)}
+.cella.attiva{background:var(--accento);}
+.cella.attiva input{color:#fff}
+.cella.data input{color:var(--tenue)}
+.cella.aiuto input{color:var(--oro)}
+.cella.giusta{background:var(--verde-tenue)}
+.cella.sbagliata{background:var(--rosso-tenue)}
+.cella .numero{
+  position:absolute;top:1px;left:2px;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:calc(var(--lato) * .26);line-height:1;color:var(--tenue);pointer-events:none;
+}
+.cella.attiva .numero{color:#fff}
+.cella .codice{
+  position:absolute;bottom:1px;right:3px;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:calc(var(--lato) * .26);line-height:1;color:var(--accento);pointer-events:none;font-weight:700;
+}
+.cella.attiva .codice{color:#fff}
+
+/* Definizioni */
+.elenchi{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.elenco h3{border-bottom:2px solid var(--bordo-forte);padding-bottom:6px;margin-bottom:10px}
+.elenco ol{list-style:none;margin:0;padding:0;max-height:52vh;overflow:auto}
+.elenco li{
+  display:flex;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:.95rem;
+  border-left:3px solid transparent;
+}
+.elenco li:hover{background:var(--accento-tenue)}
+.elenco li.attiva{background:var(--accento-tenue);border-left-color:var(--accento);font-weight:600}
+.elenco li.risolta{color:var(--tenue);text-decoration:line-through;text-decoration-thickness:1px}
+.elenco li b{flex:none;min-width:1.6em;text-align:right;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+
+.pannello{margin-top:18px;border:1px solid var(--bordo);border-radius:12px;padding:14px;background:var(--sfondo)}
+.serbatoio{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.serbatoio li{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.82rem;
+  padding:4px 9px;border:1px solid var(--bordo);border-radius:999px;background:var(--carta);letter-spacing:.06em;
+}
+.serbatoio li.usata{opacity:.4;text-decoration:line-through}
+.legenda{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px;margin:0;padding:0;list-style:none}
+.legenda li{
+  border:1px solid var(--bordo);border-radius:8px;padding:4px 0;text-align:center;background:var(--carta);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+.legenda li b{display:block;font-size:1.05rem;line-height:1.2;min-height:1.2em}
+.legenda li span{font-size:.68rem;color:var(--accento);font-weight:700}
+.legenda li.nota b{color:var(--tenue)}
+
+.messaggio{
+  margin:14px 0 0;padding:10px 14px;border-radius:10px;font-size:.92rem;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;border:1px solid var(--bordo);
+}
+.messaggio[hidden]{display:none}
+.messaggio.buono{background:var(--verde-tenue);border-color:var(--verde);color:var(--verde)}
+.messaggio.cattivo{background:var(--rosso-tenue);border-color:var(--rosso);color:var(--rosso)}
+.messaggio.avviso{background:var(--oro-tenue);border-color:var(--oro);color:var(--oro)}
+
+footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);font-size:.85rem;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+
+.soloLettori{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media print{
+  body{background:#fff;color:#000}
+  .testata,.strumenti,footer,#pannelloCreazione,.contatori,.messaggio{display:none !important}
+  .carta{box-shadow:none;border:0;padding:0}
+  .tavolo{grid-template-columns:1fr}
+  .cella{box-shadow:inset 0 0 0 1px #000}
+  .cella.vuota{background:#000}
+  .cella.parola,.cella.attiva,.cella.giusta,.cella.sbagliata{background:#fff}
+  .cella.attiva input{color:#000}
+}
+</style>
+</head>
+<body>
+
+<header class="testata">
+  <div class="contenitore">
+    <div class="marchio">
+      <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div>
+        <p class="occhiello">Creazione di cruciverba</p>
+        <h1>CruciWord Creator</h1>
+      </div>
+    </div>
+    <p class="sottotitolo">Scegli le categorie, la difficoltà e il tipo di schema: normale, facilitato oppure crittografato. Poi gioca, chiedi un suggerimento, verifica le parole ed esporta il risultato.</p>
+  </div>
+</header>
+
+<main class="contenitore">
+
+  <!-- ====================== CREAZIONE GUIDATA ====================== -->
+  <section id="pannelloCreazione" class="carta" aria-labelledby="tCreazione">
+    <h2 id="tCreazione">Creazione guidata</h2>
+    <ol class="tappe" id="tappe">
+      <li data-tappa="1" class="attiva"><b>1</b> Categorie</li>
+      <li data-tappa="2"><b>2</b> Difficoltà</li>
+      <li data-tappa="3"><b>3</b> Tipo di schema</li>
+      <li data-tappa="4"><b>4</b> Dimensioni</li>
+      <li data-tappa="5"><b>5</b> Parole tue</li>
+    </ol>
+
+    <div class="passo visibile" data-passo="1">
+      <h3>Da quali categorie pesco le parole</h3>
+      <p class="guida">Puoi sceglierne quante vuoi: più categorie attivi, più incroci riesce a trovare il programma.</p>
+      <div class="scelte" id="sceltaCategorie"></div>
+      <div>
+        <button type="button" class="tenue" id="tutteCategorie">Seleziona tutto</button>
+        <button type="button" class="tenue" id="nessunaCategoria">Togli tutto</button>
+      </div>
+    </div>
+
+    <div class="passo" data-passo="2">
+      <h3>Quanto deve essere difficile</h3>
+      <p class="guida">La difficoltà cambia la lunghezza delle parole, il numero delle definizioni e la quantità di lettere già scritte negli schemi facilitati.</p>
+      <div class="scelte">
+        <label class="scelta"><input type="radio" name="difficolta" value="facile" checked>
+          <span class="titolo">Facile</span><span class="nota">Parole da tre a sette lettere, schema breve, molti incroci comodi.</span></label>
+        <label class="scelta"><input type="radio" name="difficolta" value="media">
+          <span class="titolo">Media</span><span class="nota">Parole fino a nove lettere e un numero equilibrato di definizioni.</span></label>
+        <label class="scelta"><input type="radio" name="difficolta" value="difficile">
+          <span class="titolo">Difficile</span><span class="nota">Parole lunghe fino a dodici lettere, schema fitto e pochi aiuti.</span></label>
+      </div>
+    </div>
+
+    <div class="passo" data-passo="3">
+      <h3>Che tipo di schema voglio</h3>
+      <p class="guida">Il tipo decide come si presenta il cruciverba a chi lo risolve.</p>
+      <div class="scelte">
+        <label class="scelta"><input type="radio" name="tipo" value="normale" checked>
+          <span class="titolo">Normale</span><span class="nota">Definizioni numerate per le orizzontali e per le verticali, caselle tutte da riempire.</span></label>
+        <label class="scelta"><input type="radio" name="tipo" value="facilitato">
+          <span class="titolo">Facilitato</span><span class="nota">Alcune lettere sono già scritte e sotto lo schema compare l'elenco delle parole da collocare.</span></label>
+        <label class="scelta"><input type="radio" name="tipo" value="crittografato">
+          <span class="titolo">Crittografato</span><span class="nota">Niente definizioni in chiaro: ogni lettera diventa un numero e si parte da poche lettere regalate.</span></label>
+      </div>
+      <label class="campo"><span>Titolo del cruciverba</span>
+        <input type="text" id="titoloScelto" maxlength="70" placeholder="Per esempio: Il Friuli Venezia Giulia in dodici parole"></label>
+      <label class="campo"><span>Autore, se vuoi che compaia nelle stampe</span>
+        <input type="text" id="autoreScelto" maxlength="60" placeholder="Nome e cognome"></label>
+    </div>
+
+    <div class="passo" data-passo="4">
+      <h3>Quanto deve essere grande lo schema</h3>
+      <p class="guida">Il riquadro indicato è il massimo a disposizione: il programma poi ritaglia la griglia sulle parole che è riuscito a incrociare.</p>
+      <div class="scelte">
+        <label class="scelta"><input type="radio" name="dimensione" value="9">
+          <span class="titolo">Piccolo</span><span class="nota">Nove caselle per lato, adatto ai più piccoli e alla stampa su mezza pagina.</span></label>
+        <label class="scelta"><input type="radio" name="dimensione" value="13" checked>
+          <span class="titolo">Medio</span><span class="nota">Tredici caselle per lato, la misura più equilibrata.</span></label>
+        <label class="scelta"><input type="radio" name="dimensione" value="17">
+          <span class="titolo">Grande</span><span class="nota">Diciassette caselle per lato, per schemi ricchi di definizioni.</span></label>
+        <label class="scelta"><input type="radio" name="dimensione" value="21">
+          <span class="titolo">Molto grande</span><span class="nota">Ventuno caselle per lato, la misura da pagina intera.</span></label>
+      </div>
+      <label class="campo"><span>Numero massimo di parole: <output id="valoreParole">16</output></span>
+        <input type="range" id="numeroParole" min="6" max="40" value="16" step="1"></label>
+    </div>
+
+    <div class="passo" data-passo="5">
+      <h3>Vuoi aggiungere parole tue</h3>
+      <p class="guida">Scrivi una parola per riga, con la definizione dopo il punto e virgola. Il programma prova a sistemarle per prime. Le parole senza definizione ricevono la sola indicazione della lunghezza. Se non ti serve, salta pure questo passaggio.</p>
+      <label class="campo"><span>Parole personali</span>
+        <textarea id="paroleProprie" spellcheck="false" placeholder="ROVEREDO; Il Comune in Piano della pedemontana pordenonese&#10;FOGOLAR; Il focolare friulano che dà il nome ai circoli degli emigranti"></textarea></label>
+      <div class="messaggio" id="messaggioCreazione" hidden></div>
+    </div>
+
+    <div class="navigazione">
+      <button type="button" id="passoIndietro" class="tenue" disabled>Torna indietro</button>
+      <span style="flex:1"></span>
+      <button type="button" id="passoAvanti" class="principale">Avanti</button>
+      <button type="button" id="creaCruciverba" class="principale" hidden>Crea il cruciverba</button>
+    </div>
+  </section>
+
+  <!-- ====================== TAVOLO DI GIOCO ====================== -->
+  <section id="pannelloGioco" class="carta" aria-labelledby="titoloGioco" hidden>
+    <div class="intestazioneGioco">
+      <div>
+        <h2 class="titoloCruciverba" id="titoloGioco">Cruciverba</h2>
+        <p class="dettagli" id="dettagliGioco"></p>
+      </div>
+      <div class="contatori">
+        <div class="contatore"><b id="contaParole">0</b><span>Parole</span></div>
+        <div class="contatore"><b id="contaCaselle">0</b><span>Caselle</span></div>
+        <div class="contatore"><b id="contaCompletamento">0%</b><span>Completato</span></div>
+        <div class="contatore"><b id="contaTempo">00:00</b><span>Tempo</span></div>
+      </div>
+    </div>
+
+    <div class="strumenti">
+      <button type="button" id="bSuggerisci">Suggerisci una lettera</button>
+      <button type="button" id="bRivelaParola">Rivela la parola</button>
+      <button type="button" id="bVerificaParola" class="principale">Verifica la parola</button>
+      <button type="button" id="bVerificaTutto" class="principale">Verifica tutto</button>
+      <button type="button" id="bCompleta">Riempi gli spazi vuoti</button>
+      <button type="button" id="bParolaCasuale">Aggiungi una parola a caso</button>
+      <button type="button" id="bPulisci" class="tenue">Cancella tutto</button>
+      <button type="button" id="bSoluzione" class="tenue">Mostra la soluzione</button>
+      <button type="button" id="bDefinizioni" class="tenue" hidden>Mostra le definizioni</button>
+      <button type="button" id="bStampa" class="tenue">Stampa o salva in PDF</button>
+      <button type="button" id="bEsportaHtml" class="tenue">Esporta in HTML</button>
+      <button type="button" id="bEsportaCsv" class="tenue">Esporta in CSV</button>
+      <button type="button" id="bNuovo" class="tenue">Nuovo cruciverba</button>
+    </div>
+
+    <div class="messaggio" id="messaggioGioco" hidden role="status"></div>
+
+    <div class="tavolo" style="margin-top:18px">
+      <div>
+        <div class="telaio"><div class="griglia" id="griglia" role="grid" aria-label="Schema del cruciverba"></div></div>
+        <div class="pannello" id="pannelloSerbatoio" hidden>
+          <h3>Parole da collocare</h3>
+          <ul class="serbatoio" id="serbatoio"></ul>
+        </div>
+        <div class="pannello" id="pannelloLegenda" hidden>
+          <h3>Tabella del codice</h3>
+          <p class="dettagli" style="margin:0 0 10px">Ogni numero vale sempre per la stessa lettera. Quando scopri una lettera, il programma la riporta in tutte le caselle con lo stesso numero.</p>
+          <ul class="legenda" id="legenda"></ul>
+        </div>
+      </div>
+      <div>
+        <div class="elenchi" id="elenchi">
+          <div class="elenco"><h3>Orizzontali</h3><ol id="elencoOrizzontali"></ol></div>
+          <div class="elenco"><h3>Verticali</h3><ol id="elencoVerticali"></ol></div>
+        </div>
+      </div>
+    </div>
+    <p class="dettagli" style="margin-top:16px">Si scrive con la tastiera: le frecce spostano il cursore, il tasto di ritorno cancella, la barra spaziatrice passa dalla lettura orizzontale a quella verticale.</p>
+  </section>
+
+</main>
+
+<footer class="contenitore">
+  <p>CruciWord Creator: pagina unica in HTML (linguaggio di marcatura per ipertesti), senza librerie esterne e senza connessione. Esportazioni disponibili in HTML, in PDF (formato di documento portatile, tramite la stampa del navigatore) e in CSV (valori separati da un carattere, apribile con un foglio di calcolo).</p>
+</footer>
+
+<script>
+"use strict";
+/* ==========================================================================
+   CruciWord Creator
+   Pagina unica: nessuna libreria esterna, nessuna chiamata di rete.
+   Sezioni: 1) archivio delle parole  2) generatore dello schema
+            3) disegno della pagina   4) comandi di gioco  5) esportazioni
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1) ARCHIVIO DELLE PAROLE
+   Ogni voce è una coppia: parola in lettere maiuscole senza accenti e
+   definizione destinata a chi risolve.
+   ------------------------------------------------------------------------- */
+const ARCHIVIO = [
+{ chiave:"fvg", nome:"Friuli Venezia Giulia", nota:"Luoghi, fiumi, sapori e parole della regione.", parole:[
+["TRIESTE","Il capoluogo della Regione Friuli Venezia Giulia"],
+["UDINE","La città del castello sul colle e di piazza Libertà"],
+["PORDENONE","Il capoluogo attraversato dal Noncello"],
+["GORIZIA","La città isontina divisa dal confine con la Slovenia"],
+["TAGLIAMENTO","Il fiume più lungo del Friuli"],
+["ISONZO","Il fiume che attraversa Gorizia"],
+["NATISONE","Il fiume delle valli a oriente di Cividale"],
+["NONCELLO","Il fiume di Pordenone"],
+["MEDUNA","Il fiume che scende dalle valli sopra Meduno"],
+["CELLINA","Il torrente che ha scavato la forra sopra Barcis"],
+["LIVENZA","Il fiume che nasce a Polcenigo e finisce in Veneto"],
+["CARSO","L'altopiano di pietra calcarea sopra Trieste"],
+["BORA","Il vento freddo che soffia da nordest sul golfo"],
+["MIRAMARE","Il castello bianco sul mare di Trieste"],
+["DUINO","Il castello a picco sul golfo, con il sentiero di Rilke"],
+["GRADO","L'isola d'oro tra la laguna e l'Adriatico"],
+["LIGNANO","La località balneare della penisola alla foce del Tagliamento"],
+["MARANO","Il borgo di pescatori che dà il nome alla laguna"],
+["AQUILEIA","L'antica città romana della basilica e dei mosaici"],
+["CIVIDALE","La città ducale dei Longobardi sul Natisone"],
+["PALMANOVA","La città fortezza a forma di stella a nove punte"],
+["SPILIMBERGO","La città della scuola del mosaico"],
+["MANIAGO","La città delle coltellerie"],
+["GEMONA","La città ricostruita dopo il terremoto del 1976"],
+["TARVISIO","Il centro alpino dove si incontrano tre confini"],
+["SAPPADA","Il comune alpino di lingua germanica passato al Friuli"],
+["PIANCAVALLO","L'altopiano con le piste da sci sopra Aviano"],
+["AVIANO","Il comune ai piedi del Piancavallo"],
+["ROVEREDO","Il Comune in Piano della pedemontana pordenonese"],
+["BARCIS","Il paese sul lago verde della Valcellina"],
+["CARNIA","La zona montana a nord della provincia di Udine"],
+["COLLIO","Le colline goriziane famose per i vini bianchi"],
+["MAGREDI","Le praterie aride e sassose del Pordenonese"],
+["ZONCOLAN","Il monte con la salita temuta dai ciclisti"],
+["REDIPUGLIA","Il grande sacrario militare dell'Isontino"],
+["FOGOLAR","Il focolare friulano che dà il nome ai circoli degli emigranti"],
+["FRICO","Il piatto friulano di formaggio e patate"],
+["MONTASIO","Il formaggio che prende il nome da un altopiano delle Alpi Giulie"],
+["GUBANA","Il dolce arrotolato delle valli del Natisone"],
+["PROSCIUTTO","Il salume che ha reso famosa San Daniele"],
+["REFOSCO","Il vitigno rosso dal peduncolo rosso"],
+["RIBOLLA","Il vitigno bianco gialla di nome e di colore"],
+["PICOLIT","Il vino dolce da meditazione dei Colli Orientali"],
+["FRIULANO","La lingua tutelata parlata in gran parte della regione"],
+["MOSAICO","L'arte fatta di tessere che si insegna a Spilimbergo"],
+["LAGUNA","Lo specchio d'acqua tra Grado e Marano"],
+["ALPI","Le montagne Giulie e Carniche della regione"],
+["SLOVENIA","Lo Stato confinante a oriente"],
+["AUSTRIA","Lo Stato confinante a settentrione"],
+["ADRIATICO","Il mare che bagna la regione"]
+]},
+{ chiave:"animali", nome:"Animali", nota:"Bestie di bosco, di casa, di cielo e di mare.", parole:[
+["CANE","L'amico dell'uomo che scodinzola"],
+["GATTO","Fa le fusa e caccia i topi"],
+["LUPO","Il predatore che ulula alla luna"],
+["VOLPE","Furba e con la coda folta"],
+["ORSO","Va in letargo e va matto per il miele"],
+["CERVO","Il maschio porta i palchi ramificati"],
+["CAPRIOLO","Il piccolo cervide dei nostri boschi"],
+["STAMBECCO","La capra selvatica delle alte rocce"],
+["CAMOSCIO","Agile ungulato delle pareti alpine"],
+["AQUILA","Il rapace simbolo delle vette"],
+["FALCO","Rapace veloce dal volo a picco"],
+["GUFO","Rapace notturno con i ciuffi sul capo"],
+["CIVETTA","Piccolo rapace notturno di cattiva fama"],
+["CORVO","Uccello nero e intelligentissimo"],
+["PASSERO","Il piccolo uccello dei tetti di città"],
+["RONDINE","Torna a primavera e nidifica sotto i tetti"],
+["CICOGNA","Grande uccello bianco e nero dal becco rosso"],
+["AIRONE","Uccello dalle lunghe zampe che pesca nelle valli"],
+["ANATRA","Nuota nello stagno e fa qua qua"],
+["GALLINA","Depone le uova nel pollaio"],
+["CAVALLO","Galoppa e si misura in cavalli vapore"],
+["ASINO","Testardo e con le orecchie lunghe"],
+["MUCCA","Rumina e dà il latte"],
+["PECORA","Dà la lana e segue il gregge"],
+["CAPRA","Bruca sulle rocce e dà un formaggio saporito"],
+["MAIALE","Dal suo allevamento nasce il prosciutto"],
+["CONIGLIO","Ha orecchie lunghe e vive nella conigliera"],
+["LEPRE","Corre nei campi e non si addomestica"],
+["SCOIATTOLO","Salta tra i rami e mette da parte le nocciole"],
+["RICCIO","Si arrotola e mostra gli aculei"],
+["TALPA","Scava gallerie e vede pochissimo"],
+["TOPO","Piccolo roditore delle dispense"],
+["PIPISTRELLO","L'unico mammifero che vola davvero"],
+["DELFINO","Mammifero marino amico dei naviganti"],
+["BALENA","Il gigante degli oceani"],
+["SQUALO","Pesce temuto dalle molte file di denti"],
+["TROTA","Pesce dei torrenti di acqua fredda"],
+["TONNO","Grande pesce azzurro del Mediterraneo"],
+["POLPO","Ha otto tentacoli e cambia colore"],
+["GRANCHIO","Cammina di lato e ha le chele"],
+["APE","Produce il miele e vive nell'alveare"],
+["FARFALLA","Nasce dal bruco e ha ali colorate"],
+["FORMICA","Instancabile lavoratrice in fila verso il nido"],
+["RAGNO","Tesse la tela e ha otto zampe"],
+["LUCERTOLA","Prende il sole sui muretti"],
+["RANA","Gracida nello stagno"],
+["SERPENTE","Striscia e cambia la pelle"],
+["TARTARUGA","Lenta e protetta dal carapace"],
+["ELEFANTE","Ha la proboscide e le zanne"],
+["PINGUINO","Uccello dei ghiacci che nuota e non vola"]
+]},
+{ chiave:"cucina", nome:"Cucina e tavola", parole:[
+["PASTA","Si tira e si taglia, poi si cala nell'acqua salata"],
+["PANE","Si fa con farina, acqua e lievito"],
+["RISO","Il chicco che si coltiva nelle risaie"],
+["POLENTA","Farina di mais cotta a lungo e mescolata"],
+["GNOCCHI","Si fanno con patate e farina e si rigano con la forchetta"],
+["LASAGNE","Sfoglie a strati con ragù e besciamella"],
+["MINESTRA","Si mangia calda con il cucchiaio"],
+["BRODO","Liquido saporito in cui si cuociono i tortellini"],
+["RAGU","Il sugo di carne che cuoce per ore"],
+["POMODORO","Rosso, d'estate, base del sugo"],
+["BASILICO","L'erba profumata del pesto"],
+["ROSMARINO","L'arbusto aromatico che insaporisce le patate"],
+["SALVIA","Si frigge nel burro per condire i ravioli"],
+["AGLIO","Spicchio che insaporisce e allontana i vampiri"],
+["CIPOLLA","Fa piangere chi la affetta"],
+["PATATA","Tubero che si lessa, si frigge e si arrostisce"],
+["CAROTA","Arancione e ricca di vitamina A"],
+["ZUCCHINA","Ortaggio verde e allungato dell'estate"],
+["MELANZANA","Viola, si fa alla parmigiana"],
+["PEPERONE","Giallo, rosso o verde, si fa ripieno"],
+["INSALATA","Si condisce con olio, sale e aceto"],
+["SPINACI","Verdura verde cara a Braccio di Ferro"],
+["FAGIOLI","Legumi da minestra, buoni con la pasta"],
+["PISELLI","Legumi verdi nel baccello"],
+["CECI","Legumi con cui si fa anche la farina"],
+["FORMAGGIO","Nasce dal latte e stagiona in cantina"],
+["RICOTTA","Si ottiene dal siero del latte"],
+["BURRO","Grasso del latte che si spalma sul pane"],
+["LATTE","Bianco, si beve a colazione"],
+["UOVO","Ha il tuorlo e l'albume"],
+["FARINA","Si ottiene macinando il grano"],
+["ZUCCHERO","Dolcifica il caffè"],
+["SALE","Si prende dal mare e insaporisce"],
+["PEPE","Si macina dal mulinello"],
+["OLIO","Si spreme dalle olive"],
+["ACETO","Condimento acido che nasce dal vino"],
+["VINO","Nasce dall'uva e invecchia in botte"],
+["CAFFE","Si prende al banco, corretto o macchiato"],
+["TORTA","Si taglia a fette nei compleanni"],
+["BISCOTTO","Si inzuppa nel latte"],
+["GELATO","Si prende in coppetta o nel cono"],
+["MIELE","Dolce dono delle api"],
+["MARMELLATA","Conserva dolce di agrumi"],
+["CIOCCOLATO","Nasce dal cacao e si scioglie in bocca"],
+["ARANCIA","Agrume da spremuta"],
+["MELA","Una al giorno toglie il medico di torno"],
+["PERA","Frutto dolce a forma di campana"],
+["UVA","Si raccoglie in settembre e dà il vino"],
+["PESCA","Frutto estivo dalla buccia vellutata"],
+["FRAGOLA","Piccolo frutto rosso di primavera"]
+]},
+{ chiave:"natura", nome:"Natura e paesaggio", parole:[
+["ALBERO","Ha radici, tronco e chioma"],
+["QUERCIA","Albero robusto che fa le ghiande"],
+["FAGGIO","Albero dei boschi di montagna dalla corteccia liscia"],
+["ABETE","Sempreverde che si addobba a dicembre"],
+["PINO","Sempreverde dagli aghi lunghi e dalle pigne"],
+["LARICE","Conifera che in autunno diventa dorata e perde gli aghi"],
+["BETULLA","Albero dalla corteccia bianca"],
+["CASTAGNO","Dà i frutti che si arrostiscono in autunno"],
+["SALICE","Piangente lungo i fiumi"],
+["PIOPPO","Alto e sottile, si allinea lungo i filari"],
+["ACERO","Le sue foglie arrossano in autunno"],
+["TIGLIO","Albero dei viali dai fiori profumati"],
+["OLIVO","Dai suoi frutti si ricava l'olio"],
+["VITE","Pianta che si coltiva a filari e dà l'uva"],
+["ROSA","Ha i petali profumati e le spine"],
+["TULIPANO","Fiore a coppa che viene dall'Olanda"],
+["VIOLA","Piccolo fiore di primavera, anche colore"],
+["MARGHERITA","Petali bianchi e cuore giallo"],
+["PAPAVERO","Rosso, spunta nei campi di grano"],
+["GIRASOLE","Segue il sole con il capo"],
+["EDERA","Rampicante sempreverde sui muri"],
+["FELCE","Pianta del sottobosco senza fiori"],
+["MUSCHIO","Tappeto verde sulle pietre umide"],
+["FUNGO","Ha il cappello e il gambo e si cerca nel bosco"],
+["SEME","Da lui nasce la pianta"],
+["RADICE","Tiene la pianta ancorata al terreno"],
+["FOGLIA","Cade in autunno"],
+["RAMO","Parte dell'albero su cui si posa l'uccello"],
+["CORTECCIA","Riveste il tronco"],
+["PRATO","Distesa d'erba da falciare"],
+["BOSCO","Insieme fitto di alberi"],
+["FORESTA","Bosco grandissimo"],
+["FIUME","Scorre verso il mare"],
+["LAGO","Acqua ferma circondata da terra"],
+["MARE","Si misura in miglia e sa di sale"],
+["MONTE","Si scala e ha una cima"],
+["COLLINA","Rilievo dolce coltivato a vigneto"],
+["PIANURA","Terreno piatto e coltivato"],
+["VALLE","Sta tra due montagne"],
+["GHIACCIAIO","Fiume di ghiaccio che scende lento"],
+["SORGENTE","Il punto dove nasce il fiume"],
+["CASCATA","Salto d'acqua tra le rocce"],
+["NEVE","Cade d'inverno e imbianca il paese"],
+["PIOGGIA","Cade dalle nuvole e bagna"],
+["VENTO","Muove le foglie e gonfia le vele"],
+["NEBBIA","Nasconde la strada nelle mattine d'autunno"],
+["TEMPORALE","Porta tuoni, lampi e acquazzoni"],
+["ARCOBALENO","Sette colori dopo la pioggia"],
+["NUVOLA","Galleggia nel cielo e porta la pioggia"],
+["STELLA","Brilla nel cielo di notte"]
+]},
+{ chiave:"sport", nome:"Sport e movimento", parole:[
+["CALCIO","Si gioca in undici con il pallone"],
+["PALLONE","Rotola in campo e gonfia la rete"],
+["PORTIERE","L'unico che può usare le mani in area"],
+["ARBITRO","Fischia e mostra i cartellini"],
+["RETE","Si gonfia quando si segna"],
+["CANESTRO","Vale due o tre punti"],
+["PALLAVOLO","Sei giocatori per squadra divisi da una rete alta"],
+["TENNIS","Si gioca con la racchetta e si conta a quindici"],
+["RACCHETTA","Serve per colpire la pallina"],
+["NUOTO","Si pratica a stile libero, a rana o a dorso"],
+["PISCINA","Vasca lunga venticinque o cinquanta metri"],
+["CORSA","Si misura in metri e in minuti"],
+["MARATONA","Quarantadue chilometri e centonovantacinque metri"],
+["ATLETICA","La regina degli sport, leggera di nome"],
+["SALTO","In alto, in lungo o con l'asta"],
+["CICLISMO","Sport della bicicletta e delle salite"],
+["BICICLETTA","Due ruote, una catena e due pedali"],
+["TAPPA","Frazione di una corsa a più giorni"],
+["MAGLIA","Rosa al Giro e gialla al Tour"],
+["SCI","Si calzano ai piedi per scendere sulla neve"],
+["SLALOM","Discesa tra i pali"],
+["DISCESA","La gara più veloce sulla neve"],
+["PATTINAGGIO","Si pratica sul ghiaccio con le lame"],
+["GHIACCIO","Superficie del palazzetto dove si pattina"],
+["SCHERMA","Sport di fioretto, spada e sciabola"],
+["FIORETTO","Arma della scherma che punge di punta"],
+["LOTTA","Sport di presa, greco romana o libera"],
+["PUGILATO","Si pratica sul ring con i guantoni"],
+["GINNASTICA","Artistica o ritmica, con nastro e cerchio"],
+["ALLENATORE","Guida la squadra dalla panchina"],
+["SQUADRA","Insieme di giocatori con la stessa divisa"],
+["STADIO","Impianto con gli spalti per migliaia di persone"],
+["TIFOSO","Sostiene la squadra dagli spalti"],
+["VITTORIA","Il risultato che tutti cercano"],
+["SCONFITTA","Il contrario della vittoria"],
+["PAREGGIO","Finisce alla pari"],
+["MEDAGLIA","Oro, argento o bronzo"],
+["PODIO","Ci salgono i primi tre"],
+["CAMPIONE","Chi vince il titolo"],
+["OLIMPIADI","Si tengono ogni quattro anni"],
+["TORNEO","Competizione a eliminazione"],
+["CANOA","Si spinge con la pagaia"],
+["VELA","Sfrutta il vento per navigare"],
+["ALPINISMO","Sport di chi sale le montagne con corda e piccozza"],
+["CORDA","Lega i compagni in parete"],
+["PALESTRA","Luogo chiuso dove ci si allena"],
+["ARRAMPICATA","Si sale la parete appigliandosi alle prese"],
+["PALLAMANO","Sette giocatori e tiri in porta con le mani"],
+["SCARPA","Da corsa, con i tacchetti o da montagna"],
+["FISCHIO","Segnale che ferma il gioco"]
+]},
+{ chiave:"musica", nome:"Musica, arte e spettacolo", parole:[
+["MUSICA","Arte dei suoni e del silenzio"],
+["NOTA","Do, re, mi e le altre"],
+["PENTAGRAMMA","Le cinque righe su cui si scrivono le note"],
+["SPARTITO","Il foglio che il musicista legge"],
+["MELODIA","La linea che si canticchia"],
+["ARMONIA","L'accordo tra suoni diversi"],
+["RITMO","Scandisce il tempo della musica"],
+["CORO","Cantano insieme a più voci"],
+["ORCHESTRA","Suona sotto la guida del direttore"],
+["DIRETTORE","Tiene la bacchetta e dà gli attacchi"],
+["VIOLINO","Il più acuto degli archi"],
+["VIOLONCELLO","Arco dal suono profondo che si suona seduti"],
+["CONTRABBASSO","Il più grande degli strumenti ad arco"],
+["CHITARRA","Sei corde da pizzicare"],
+["PIANOFORTE","Ottantotto tasti bianchi e neri"],
+["ARPA","Si pizzica e ha molte corde tese sul telaio"],
+["FLAUTO","Fiato traverso dal suono limpido"],
+["CLARINETTO","Fiato ad ancia semplice"],
+["TROMBA","Ottone con tre pistoni"],
+["TROMBONE","Ottone con la coulisse che scorre"],
+["CORNO","Ottone avvolto a spirale"],
+["TAMBURO","Percussione da rullare con le bacchette"],
+["BATTERIA","Insieme di tamburi e piatti"],
+["FISARMONICA","Si apre e si chiude a mantice"],
+["ORGANO","Strumento a canne delle chiese"],
+["OPERA","Si canta in teatro con l'orchestra"],
+["SOPRANO","La voce femminile più acuta"],
+["TENORE","La voce maschile più acuta"],
+["BARITONO","Voce maschile tra tenore e basso"],
+["CANZONE","Ha strofa e ritornello"],
+["CONCERTO","Si tiene dal vivo davanti al pubblico"],
+["SINFONIA","Grande composizione per orchestra in più movimenti"],
+["SONATA","Composizione per uno o due strumenti"],
+["TEATRO","Ha il palcoscenico e la platea"],
+["SIPARIO","Si alza quando comincia lo spettacolo"],
+["PALCO","Lo spazio calcato dagli attori"],
+["ATTORE","Recita la parte"],
+["REGISTA","Guida attori e riprese"],
+["QUADRO","Si appende alla parete del museo"],
+["PITTURA","Arte del pennello e del colore"],
+["TELA","Il supporto di lino su cui dipinge il pittore"],
+["PENNELLO","Ha le setole e si intinge nel colore"],
+["AFFRESCO","Pittura fatta sull'intonaco ancora fresco"],
+["SCULTURA","Arte che toglie materia dal blocco"],
+["MARMO","Pietra di Carrara cara agli scultori"],
+["STATUA","Figura scolpita a tutto tondo"],
+["MUSEO","Conserva ed espone le opere"],
+["MOSTRA","Esposizione temporanea di opere"],
+["RITRATTO","Dipinto che raffigura una persona"],
+["PAESAGGIO","Quadro che raffigura luoghi e orizzonti"]
+]},
+{ chiave:"scienza", nome:"Scienza e tecnica", parole:[
+["ATOMO","La più piccola parte di un elemento"],
+["MOLECOLA","Unione di atomi legati tra loro"],
+["ELETTRONE","Particella con carica negativa"],
+["PROTONE","Particella del nucleo con carica positiva"],
+["NEUTRONE","Particella del nucleo senza carica"],
+["ENERGIA","Non si crea e non si distrugge"],
+["FORZA","Si misura in newton"],
+["MASSA","Si misura in chilogrammi"],
+["GRAVITA","Fa cadere la mela"],
+["VELOCITA","Spazio diviso tempo"],
+["CALORE","Passa dal corpo caldo a quello freddo"],
+["LUCE","Viaggia a trecentomila chilometri al secondo"],
+["SUONO","Si propaga come onda nell'aria"],
+["ONDA","Ha una cresta e una lunghezza"],
+["MAGNETE","Ha due poli e attira il ferro"],
+["CORRENTE","Si misura in ampere"],
+["CIRCUITO","Percorso chiuso della corrente"],
+["MOTORE","Trasforma l'energia in movimento"],
+["TURBINA","Gira spinta da acqua o da vapore"],
+["LEVA","Macchina semplice con un fulcro"],
+["INGRANAGGIO","Ruota dentata che trasmette il moto"],
+["METALLO","Conduce calore ed elettricità"],
+["FERRO","Metallo che arrugginisce"],
+["RAME","Metallo rossastro dei cavi elettrici"],
+["ORO","Metallo prezioso e giallo"],
+["ARGENTO","Metallo bianco e prezioso delle posate"],
+["PIOMBO","Metallo pesante e grigio"],
+["OSSIGENO","Il gas che respiriamo"],
+["IDROGENO","L'elemento più leggero"],
+["CARBONIO","L'elemento alla base della vita"],
+["AZOTO","Il gas più abbondante nell'aria"],
+["ACQUA","Due atomi di idrogeno e uno di ossigeno"],
+["ACIDO","Ha il pH minore di sette"],
+["REAZIONE","Trasformazione chimica tra sostanze"],
+["CELLULA","La più piccola unità dei viventi"],
+["NUCLEO","Contiene il materiale ereditario della cellula"],
+["GENE","Tratto del genoma che porta un carattere"],
+["VIRUS","Si riproduce solo dentro una cellula"],
+["BATTERIO","Organismo di una sola cellula senza nucleo"],
+["MICROSCOPIO","Ingrandisce ciò che è piccolissimo"],
+["TELESCOPIO","Avvicina le stelle all'occhio"],
+["PIANETA","Gira attorno alla stella"],
+["SATELLITE","Gira attorno al pianeta"],
+["COMETA","Astro con la coda luminosa"],
+["GALASSIA","Insieme immenso di stelle come la Via Lattea"],
+["ORBITA","Il cammino di un corpo attorno a un altro"],
+["NUMERO","Si scrive in cifre"],
+["ANGOLO","Retto, acuto oppure ottuso"],
+["TRIANGOLO","Ha tre lati e tre angoli"],
+["CERCHIO","Tutti i punti alla stessa distanza dal centro"]
+]},
+{ chiave:"comune", nome:"Comune e vita pubblica", nota:"Parole dell'amministrazione, utili anche a scuola.", parole:[
+["COMUNE","L'ente più vicino al cittadino"],
+["SINDACO","Porta la fascia tricolore"],
+["GIUNTA","L'organo che governa il Comune con il sindaco"],
+["CONSIGLIO","L'assemblea eletta che approva il bilancio"],
+["ASSESSORE","Ha una delega e siede in giunta"],
+["SEGRETARIO","Il funzionario che roga gli atti del Comune"],
+["DELIBERA","L'atto della giunta o del consiglio"],
+["DETERMINA","L'atto del responsabile di servizio"],
+["ORDINANZA","Il provvedimento urgente del sindaco"],
+["REGOLAMENTO","Norma locale che disciplina una materia"],
+["STATUTO","La carta fondamentale dell'ente"],
+["BILANCIO","Prevede entrate e spese dell'anno"],
+["TRIBUTO","Entrata che il cittadino versa all'ente"],
+["IMPOSTA","Tributo che non dipende da un servizio ricevuto"],
+["BANDO","Avviso pubblico che apre una selezione"],
+["CONTRIBUTO","Sostegno economico concesso dall'ente"],
+["DOMANDA","Si presenta entro la scadenza per ottenere un contributo"],
+["ISTANZA","Richiesta rivolta alla pubblica amministrazione"],
+["PROTOCOLLO","Registra e data ogni documento in arrivo"],
+["ALBO","Pretorio, vi si pubblicano gli atti"],
+["TRASPARENZA","Principio che rende conoscibili gli atti pubblici"],
+["APPALTO","Contratto con cui si affidano lavori o servizi"],
+["GARA","Procedura di confronto tra più offerte"],
+["CANTIERE","Il luogo recintato dove si eseguono i lavori"],
+["PATRIMONIO","L'insieme dei beni dell'ente"],
+["DEMANIO","I beni pubblici non alienabili"],
+["CATASTO","Registra i terreni e i fabbricati"],
+["LICENZA","Autorizzazione a svolgere una attività"],
+["CERTIFICATO","Documento che attesta un fatto"],
+["ANAGRAFE","Registra i residenti"],
+["RESIDENZA","Il luogo dove si abita abitualmente"],
+["CITTADINO","Chi ha diritti e doveri nella comunità"],
+["ELETTORE","Chi vota"],
+["ELEZIONE","Si tiene con le schede e le matite copiative"],
+["SEGGIO","Vi si vota, con il presidente e gli scrutatori"],
+["SCRUTINIO","Il conteggio dei voti"],
+["MANDATO","La durata dell'incarico di un eletto"],
+["REGIONE","Ente con potestà legislativa propria"],
+["PROVINCIA","Ente di area vasta"],
+["PREFETTURA","La rappresentanza dello Stato sul territorio"],
+["POLIZIA","Locale, di Stato o stradale"],
+["VIGILE","Dirige il traffico e fa rispettare i regolamenti"],
+["EMERGENZA","Situazione che richiede risposta immediata"],
+["VOLONTARIO","Presta la propria opera gratuitamente"],
+["SICUREZZA","Bene da tutelare con prevenzione e controllo"],
+["SEGNALETICA","Cartelli e strisce che regolano la strada"],
+["ILLUMINAZIONE","Impianto pubblico che rischiara le vie"],
+["MANUTENZIONE","Ordinaria o straordinaria, tiene in efficienza i beni"],
+["DECORO","Cura dell'aspetto degli spazi pubblici"],
+["RACCOLTA","Differenziata, riguarda i rifiuti"]
+]},
+{ chiave:"storia", nome:"Storia e geografia", parole:[
+["ROMA","La capitale d'Italia e del mondo antico"],
+["IMPERO","Fu romano, poi d'Oriente"],
+["CESARE","Attraversò il Rubicone"],
+["SENATO","L'assemblea dei patrizi romani"],
+["LEGIONE","Grande unità dell'esercito romano"],
+["ANFITEATRO","Vi si tenevano i giochi dei gladiatori"],
+["ACQUEDOTTO","Portava l'acqua in città sugli archi"],
+["MEDIOEVO","L'età tra il mondo antico e quello moderno"],
+["CASTELLO","Ha torri, mura e ponte levatoio"],
+["TORRE","Svetta sulle mura e fa da vedetta"],
+["MURA","Cingono la città antica"],
+["CAVALIERE","Combatteva a cavallo con lo scudo"],
+["MONASTERO","Vi vivono i monaci"],
+["ABBAZIA","Comunità monastica guidata da un abate"],
+["PERGAMENA","Si scriveva prima della carta"],
+["RINASCIMENTO","L'età di Leonardo e di Raffaello"],
+["RISORGIMENTO","Il movimento che portò all'unità d'Italia"],
+["GARIBALDI","Partì da Quarto con i Mille"],
+["COSTITUZIONE","La legge fondamentale della Repubblica"],
+["REPUBBLICA","Nacque in Italia con il voto del 1946"],
+["EUROPA","Il continente dell'Unione con ventisette Stati"],
+["ITALIA","La penisola a forma di stivale"],
+["FRANCIA","Confina con l'Italia a occidente"],
+["SPAGNA","Stato della penisola iberica"],
+["GERMANIA","Stato con capitale Berlino"],
+["CROAZIA","Stato adriatico con capitale Zagabria"],
+["GRECIA","Patria della democrazia antica"],
+["EGITTO","Terra dei faraoni e del Nilo"],
+["PIRAMIDE","Tomba monumentale dei faraoni"],
+["FARAONE","Il sovrano dell'antico Egitto"],
+["ATENE","La città di Pericle e del Partenone"],
+["SPARTA","La città greca dei guerrieri"],
+["VENEZIA","La città dei canali e della Serenissima"],
+["FIRENZE","La città del Duomo e degli Uffizi"],
+["MILANO","La città della Scala e della Madonnina"],
+["TORINO","La città della Mole Antonelliana"],
+["NAPOLI","La città del Vesuvio e del golfo"],
+["PALERMO","Il capoluogo della Sicilia"],
+["GENOVA","La città della lanterna e del porto antico"],
+["BOLOGNA","La città delle due torri e dei portici"],
+["VERONA","La città dell'Arena e di Giulietta"],
+["MEDITERRANEO","Il mare tra tre continenti"],
+["APPENNINI","La catena che percorre la penisola"],
+["TEVERE","Il fiume che attraversa Roma"],
+["SICILIA","L'isola più grande del Mediterraneo"],
+["SARDEGNA","L'isola dei nuraghi"],
+["VESUVIO","Il vulcano che seppellì Pompei"],
+["ETNA","Il vulcano più alto d'Europa"],
+["BANDIERA","Tricolore, sventola sui palazzi pubblici"],
+["INNO","Si canta prima delle partite della nazionale"]
+]},
+{ chiave:"comuni", nome:"Parole di ogni giorno", parole:[
+["CASA","Ci si torna la sera"],
+["PORTA","Si apre con la chiave"],
+["FINESTRA","Si affaccia sulla strada"],
+["TAVOLO","Ci si mangia sopra"],
+["SEDIA","Ha quattro gambe e uno schienale"],
+["LETTO","Ci si dorme"],
+["GIARDINO","Verde intorno alla casa"],
+["STRADA","Porta da un paese all'altro"],
+["PIAZZA","Il cuore del paese, con la chiesa e il municipio"],
+["SCUOLA","Ci si va con lo zaino"],
+["LIBRO","Ha pagine e un indice"],
+["PENNA","Scrive a inchiostro"],
+["QUADERNO","A righe o a quadretti"],
+["ZAINO","Si porta sulle spalle"],
+["AMICO","Si riconosce nel momento del bisogno"],
+["FAMIGLIA","Nucleo di affetti e di doveri"],
+["BAMBINO","Frequenta la scuola dell'infanzia"],
+["LAVORO","Nobilita e dà il pane"],
+["TEMPO","Passa e non torna"],
+["GIORNO","Ventiquattro ore"],
+["NOTTE","Buia e stellata"],
+["MATTINA","Comincia con il caffè"],
+["SERA","Scende dopo il tramonto"],
+["ANNO","Dodici mesi"],
+["MESE","Settembre, per esempio"],
+["SETTIMANA","Sette giorni di fila"],
+["MINUTO","Sessanta secondi"],
+["VIAGGIO","Si prepara con la valigia"],
+["TRENO","Corre sui binari"],
+["AEREO","Decolla dalla pista"],
+["NAVE","Attracca in porto"],
+["AUTOBUS","Ferma alla pensilina"],
+["CITTA","Grande centro abitato"],
+["PAESE","Piccolo centro abitato"],
+["SPIAGGIA","Sabbia, ombrelloni e mare"],
+["VACANZA","Si aspetta tutto l'anno"],
+["FESTA","Si celebra con gli amici"],
+["REGALO","Si incarta e si dona"],
+["SORRISO","Non costa nulla e vale molto"],
+["PAROLA","Data, va mantenuta"],
+["STORIA","Si racconta ai bambini la sera"],
+["SOGNO","Si fa dormendo o a occhi aperti"],
+["SPERANZA","Ultima a morire"],
+["CORAGGIO","Serve a chi ha paura e va avanti lo stesso"],
+["SILENZIO","Vale più di molte parole"],
+["MEMORIA","Custodisce il passato"],
+["OROLOGIO","Segna le ore"],
+["CHIAVE","Apre la serratura"],
+["SPECCHIO","Riflette chi lo guarda"],
+["LAMPADA","Fa luce sulla scrivania"]
+]}
+];
+
+/* -------------------------------------------------------------------------
+   2) GENERATORE DELLO SCHEMA
+   ------------------------------------------------------------------------- */
+const PARAMETRI = {
+  facile:    { minimo:3, massimo:7,  parole:12, rivela:0.35, chiavi:4 },
+  media:     { minimo:3, massimo:9,  parole:18, rivela:0.24, chiavi:3 },
+  difficile: { minimo:4, massimo:13, parole:26, rivela:0.14, chiavi:2 }
+};
+
+/** Toglie accenti, spazi e segni: resta solo l'alfabeto in maiuscolo. */
+function normalizza(testo){
+  return String(testo)
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toUpperCase().replace(/[^A-Z]/g, "");
+}
+
+function mescola(lista){
+  const a = lista.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Raccoglie le parole utilizzabili: prima le personali, poi quelle d'archivio. */
+function raccogliPool(categorie, param, personali){
+  const viste = new Set();
+  const pool = [];
+  for(const v of personali){
+    if(v.p.length < 3 || viste.has(v.p)) continue;
+    viste.add(v.p);
+    pool.push({ p:v.p, d:v.d, pers:true, categoria:"Parole tue" });
+  }
+  for(const gruppo of ARCHIVIO){
+    if(!categorie.includes(gruppo.chiave)) continue;
+    for(const [p, d] of gruppo.parole){
+      const parola = normalizza(p);
+      if(parola.length < param.minimo || parola.length > param.massimo) continue;
+      if(viste.has(parola)) continue;
+      viste.add(parola);
+      pool.push({ p:parola, d:d, pers:false, categoria:gruppo.nome });
+    }
+  }
+  return pool;
+}
+
+/** Dice quante intersezioni nascono mettendo la parola in quel punto, oppure meno uno. */
+function verificaPosto(g, parola, r, c, dir, N){
+  if(r < 0 || c < 0) return -1;
+  const dr = dir === "V" ? 1 : 0, dc = dir === "O" ? 1 : 0;
+  const rf = r + dr * (parola.length - 1), cf = c + dc * (parola.length - 1);
+  if(rf >= N || cf >= N) return -1;
+  const pr = r - dr, pc = c - dc;
+  if(pr >= 0 && pc >= 0 && g[pr][pc]) return -1;
+  const sr = rf + dr, sc = cf + dc;
+  if(sr < N && sc < N && g[sr][sc]) return -1;
+  let incroci = 0;
+  for(let i = 0; i < parola.length; i++){
+    const rr = r + dr * i, cc = c + dc * i;
+    const dentro = g[rr][cc];
+    if(dentro){
+      if(dentro !== parola[i]) return -1;
+      incroci++;
+    } else if(dir === "O"){
+      if(rr > 0 && g[rr - 1][cc]) return -1;
+      if(rr < N - 1 && g[rr + 1][cc]) return -1;
+    } else {
+      if(cc > 0 && g[rr][cc - 1]) return -1;
+      if(cc < N - 1 && g[rr][cc + 1]) return -1;
+    }
+  }
+  return incroci;
+}
+
+function scriviSullaGriglia(g, parola, r, c, dir){
+  const dr = dir === "V" ? 1 : 0, dc = dir === "O" ? 1 : 0;
+  for(let i = 0; i < parola.length; i++) g[r + dr * i][c + dc * i] = parola[i];
+}
+
+/** Cerca il posto migliore per una parola dentro uno schema già avviato. */
+function migliorPosto(g, poste, parola, N){
+  let scelta = null;
+  const centro = (N - 1) / 2;
+  for(let i = 0; i < parola.length; i++){
+    for(const posta of poste){
+      for(let j = 0; j < posta.p.length; j++){
+        if(posta.p[j] !== parola[i]) continue;
+        const dir = posta.dir === "O" ? "V" : "O";
+        const r = posta.dir === "O" ? posta.riga - i : posta.riga + j;
+        const c = posta.dir === "O" ? posta.col + j : posta.col - i;
+        const incroci = verificaPosto(g, parola, r, c, dir, N);
+        if(incroci < 1) continue;
+        const distanza = Math.abs(r - centro) + Math.abs(c - centro);
+        const punti = incroci * 14 - distanza;
+        if(!scelta || punti > scelta.punti) scelta = { riga:r, col:c, dir:dir, punti:punti };
+      }
+    }
+  }
+  return scelta;
+}
+
+function riquadro(parole){
+  let r1 = Infinity, c1 = Infinity, r2 = -Infinity, c2 = -Infinity;
+  for(const w of parole){
+    const rf = w.dir === "V" ? w.riga + w.p.length - 1 : w.riga;
+    const cf = w.dir === "O" ? w.col + w.p.length - 1 : w.col;
+    r1 = Math.min(r1, w.riga); c1 = Math.min(c1, w.col);
+    r2 = Math.max(r2, rf);     c2 = Math.max(c2, cf);
+  }
+  return { r1:r1, c1:c1, r2:r2, c2:c2, righe:r2 - r1 + 1, colonne:c2 - c1 + 1 };
+}
+
+/** Un singolo tentativo di composizione. */
+function tentativo(pool, N, massimoParole){
+  const g = Array.from({ length:N }, () => Array(N).fill(null));
+  const candidati = mescola(pool);
+  candidati.sort((a, b) => (b.pers ? 1 : 0) - (a.pers ? 1 : 0));
+  const poste = [];
+  for(const c of candidati){
+    if(poste.length >= massimoParole) break;
+    const parola = c.p;
+    if(parola.length > N) continue;
+    if(poste.length === 0){
+      const riga = Math.floor(N / 2);
+      const col = Math.floor((N - parola.length) / 2);
+      if(verificaPosto(g, parola, riga, col, "O", N) >= 0){
+        scriviSullaGriglia(g, parola, riga, col, "O");
+        poste.push(Object.assign({}, c, { riga:riga, col:col, dir:"O" }));
+      }
+      continue;
+    }
+    const posto = migliorPosto(g, poste, parola, N);
+    if(posto){
+      scriviSullaGriglia(g, parola, posto.riga, posto.col, posto.dir);
+      poste.push(Object.assign({}, c, { riga:posto.riga, col:posto.col, dir:posto.dir }));
+    }
+  }
+  return { griglia:g, parole:poste, N:N };
+}
+
+function punteggioSchema(esito){
+  if(!esito.parole.length) return -1;
+  const q = riquadro(esito.parole);
+  let incroci = 0;
+  for(const w of esito.parole){
+    const dr = w.dir === "V" ? 1 : 0, dc = w.dir === "O" ? 1 : 0;
+    for(let i = 0; i < w.p.length; i++){
+      const rr = w.riga + dr * i, cc = w.col + dc * i;
+      const orizzontale = cc > 0 && esito.griglia[rr][cc - 1] || cc < esito.N - 1 && esito.griglia[rr][cc + 1];
+      const verticale = rr > 0 && esito.griglia[rr - 1][cc] || rr < esito.N - 1 && esito.griglia[rr + 1][cc];
+      if(orizzontale && verticale) incroci++;
+    }
+  }
+  const personali = esito.parole.filter(w => w.pers).length;
+  return esito.parole.length * 1000 + personali * 700 + incroci * 12 - q.righe * q.colonne;
+}
+
+/** Compone lo schema provando più volte e tenendo il risultato migliore. */
+function generaSchema(pool, N, massimoParole){
+  let migliore = null, punteggioMigliore = -Infinity;
+  const giri = N > 15 ? 26 : 44;
+  for(let t = 0; t < giri; t++){
+    const esito = tentativo(pool, N, massimoParole);
+    const punti = punteggioSchema(esito);
+    if(punti > punteggioMigliore){ punteggioMigliore = punti; migliore = esito; }
+  }
+  return migliore;
+}
+
+/* -------------------------------------------------------------------------
+   3) STATO DELLA PARTITA
+   ------------------------------------------------------------------------- */
+const stato = {
+  N:0, griglia:null, parole:[], numeri:new Map(),
+  risposte:new Map(), date:new Set(), aiuti:new Set(),
+  tipo:"normale", difficolta:"facile", categorie:[], pool:[],
+  titolo:"", autore:"",
+  sel:{ riga:0, col:0, dir:"O" },
+  caselle:new Map(), campi:new Map(),
+  codice:new Map(), prossimoCodice:1, letterePalesi:new Set(),
+  definizioniVisibili:true,
+  avvio:0, cronometro:0
+};
+
+const $ = (id) => document.getElementById(id);
+const chiave = (r, c) => r + "," + c;
+
+function numeraSchema(){
+  const partenze = new Set();
+  for(const w of stato.parole) partenze.add(chiave(w.riga, w.col));
+  const ordinate = Array.from(partenze)
+    .map(k => k.split(",").map(Number))
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  stato.numeri = new Map();
+  let n = 1;
+  for(const [r, c] of ordinate) stato.numeri.set(chiave(r, c), n++);
+  for(const w of stato.parole) w.num = stato.numeri.get(chiave(w.riga, w.col));
+  stato.parole.sort((a, b) => a.num - b.num);
+}
+
+function celleDellaParola(w){
+  const dr = w.dir === "V" ? 1 : 0, dc = w.dir === "O" ? 1 : 0;
+  const elenco = [];
+  for(let i = 0; i < w.p.length; i++) elenco.push([w.riga + dr * i, w.col + dc * i]);
+  return elenco;
+}
+
+function parolaIn(r, c, dir){
+  return stato.parole.find(w => w.dir === dir && celleDellaParola(w).some(([rr, cc]) => rr === r && cc === c)) || null;
+}
+
+function parolaCorrente(){
+  const s = stato.sel;
+  return parolaIn(s.riga, s.col, s.dir) || parolaIn(s.riga, s.col, s.dir === "O" ? "V" : "O");
+}
+
+function assegnaCodici(){
+  for(const w of stato.parole){
+    for(const lettera of w.p){
+      if(!stato.codice.has(lettera)) stato.codice.set(lettera, stato.prossimoCodice++);
+    }
+  }
+}
+
+/** Prepara le lettere regalate: vale sia alla creazione sia quando si aggiungono parole. */
+function applicaAiuti(paroleNuove, prima){
+  const param = PARAMETRI[stato.difficolta];
+  if(stato.tipo === "facilitato"){
+    for(const w of paroleNuove){
+      const celle = mescola(celleDellaParola(w)).filter(([r, c]) => !stato.date.has(chiave(r, c)));
+      const quante = Math.max(1, Math.round(celleDellaParola(w).length * param.rivela));
+      for(let i = 0; i < Math.min(quante, celle.length); i++){
+        const [r, c] = celle[i];
+        stato.date.add(chiave(r, c));
+        stato.risposte.set(chiave(r, c), stato.griglia[r][c]);
+      }
+    }
+  }
+  if(stato.tipo === "crittografato"){
+    assegnaCodici();
+    if(prima){
+      stato.letterePalesi = new Set(mescola(Array.from(stato.codice.keys())).slice(0, param.chiavi));
+    }
+    for(const w of paroleNuove){
+      for(const [r, c] of celleDellaParola(w)){
+        const l = stato.griglia[r][c];
+        if(stato.letterePalesi.has(l)){
+          stato.date.add(chiave(r, c));
+          stato.risposte.set(chiave(r, c), l);
+        }
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------
+   4) DISEGNO DELLA PAGINA
+   ------------------------------------------------------------------------- */
+function latoCasella(colonne){
+  const spazio = Math.min(window.innerWidth || 900, 700) - 70;
+  return Math.max(19, Math.min(42, Math.floor(spazio / Math.max(colonne, 1))));
+}
+
+function disegnaGriglia(){
+  const contenitore = $("griglia");
+  const q = riquadro(stato.parole);
+  contenitore.innerHTML = "";
+  contenitore.style.gridTemplateColumns = "repeat(" + q.colonne + ", var(--lato))";
+  contenitore.style.setProperty("--lato", latoCasella(q.colonne) + "px");
+  stato.caselle = new Map();
+  stato.campi = new Map();
+
+  for(let r = q.r1; r <= q.r2; r++){
+    for(let c = q.c1; c <= q.c2; c++){
+      const cella = document.createElement("div");
+      const lettera = stato.griglia[r][c];
+      if(!lettera){
+        cella.className = "cella vuota";
+        contenitore.appendChild(cella);
+        continue;
+      }
+      cella.className = "cella";
+      const k = chiave(r, c);
+      const numero = stato.numeri.get(k);
+      if(numero && stato.tipo !== "crittografato"){
+        const tag = document.createElement("span");
+        tag.className = "numero";
+        tag.textContent = numero;
+        cella.appendChild(tag);
+      }
+      if(stato.tipo === "crittografato"){
+        const tag = document.createElement("span");
+        tag.className = "codice";
+        tag.textContent = stato.codice.get(lettera);
+        cella.appendChild(tag);
+      }
+      const campo = document.createElement("input");
+      campo.type = "text";
+      campo.maxLength = 1;
+      campo.autocapitalize = "characters";
+      campo.autocomplete = "off";
+      campo.spellcheck = false;
+      campo.inputMode = "text";
+      campo.dataset.riga = r;
+      campo.dataset.col = c;
+      campo.value = stato.risposte.get(k) || "";
+      campo.setAttribute("aria-label", "Riga " + (r - q.r1 + 1) + ", colonna " + (c - q.c1 + 1));
+      if(stato.date.has(k)){ campo.readOnly = true; cella.classList.add("data"); }
+      if(stato.aiuti.has(k)) cella.classList.add("aiuto");
+      cella.appendChild(campo);
+      contenitore.appendChild(cella);
+      stato.caselle.set(k, cella);
+      stato.campi.set(k, campo);
+      collegaCasella(campo, r, c);
+    }
+  }
+  evidenzia();
+}
+
+function collegaCasella(campo, r, c){
+  campo.addEventListener("focus", () => {
+    const parola = parolaIn(r, c, stato.sel.dir) ? stato.sel.dir : (parolaIn(r, c, "O") ? "O" : "V");
+    stato.sel = { riga:r, col:c, dir:parola };
+    campo.select();
+    evidenzia();
+  });
+  campo.addEventListener("mousedown", () => {
+    if(stato.sel.riga === r && stato.sel.col === c) cambiaDirezione();
+  });
+  campo.addEventListener("input", () => {
+    const valore = normalizza(campo.value).slice(-1);
+    campo.value = "";
+    if(!valore) { scriviLettera(r, c, ""); return; }
+    scriviLettera(r, c, valore);
+    muovi(1);
+  });
+  campo.addEventListener("keydown", (e) => {
+    if(e.key === "Backspace"){
+      e.preventDefault();
+      if(stato.risposte.get(chiave(r, c))) scriviLettera(r, c, "");
+      else { muovi(-1); const s = stato.sel; scriviLettera(s.riga, s.col, ""); }
+    } else if(e.key === "Delete"){
+      e.preventDefault(); scriviLettera(r, c, "");
+    } else if(e.key === " "){
+      e.preventDefault(); cambiaDirezione();
+    } else if(e.key === "Enter"){
+      e.preventDefault(); parolaSuccessiva();
+    } else if(e.key.indexOf("Arrow") === 0){
+      e.preventDefault();
+      const passi = { ArrowUp:[-1, 0], ArrowDown:[1, 0], ArrowLeft:[0, -1], ArrowRight:[0, 1] }[e.key];
+      const voluta = passi[0] ? "V" : "O";
+      if(stato.sel.dir !== voluta && parolaIn(r, c, voluta)){ stato.sel.dir = voluta; evidenzia(); return; }
+      vaiA(r + passi[0], c + passi[1]);
+    }
+  });
+}
+
+function scriviLettera(r, c, lettera){
+  const k = chiave(r, c);
+  if(stato.date.has(k)) return;
+  const applica = (rr, cc) => {
+    const kk = chiave(rr, cc);
+    if(stato.date.has(kk)) return;
+    if(lettera) stato.risposte.set(kk, lettera); else stato.risposte.delete(kk);
+    stato.aiuti.delete(kk);
+    const campo = stato.campi.get(kk);
+    if(campo) campo.value = lettera;
+    const cella = stato.caselle.get(kk);
+    if(cella) cella.classList.remove("giusta", "sbagliata", "aiuto");
+  };
+  if(stato.tipo === "crittografato"){
+    const codice = stato.codice.get(stato.griglia[r][c]);
+    for(let rr = 0; rr < stato.N; rr++){
+      for(let cc = 0; cc < stato.N; cc++){
+        const l = stato.griglia[rr][cc];
+        if(l && stato.codice.get(l) === codice) applica(rr, cc);
+      }
+    }
+    disegnaLegenda();
+  } else {
+    applica(r, c);
+  }
+  aggiornaContatori();
+  aggiornaElenchi();
+}
+
+function vaiA(r, c){
+  const campo = stato.campi.get(chiave(r, c));
+  if(campo){ campo.focus(); campo.select(); }
+}
+
+function muovi(passo){
+  const parola = parolaCorrente();
+  if(!parola) return;
+  const celle = celleDellaParola(parola);
+  const indice = celle.findIndex(([r, c]) => r === stato.sel.riga && c === stato.sel.col);
+  let prossimo = indice + passo;
+  prossimo = Math.max(0, Math.min(celle.length - 1, prossimo));
+  const [r, c] = celle[prossimo];
+  stato.sel.riga = r; stato.sel.col = c;
+  vaiA(r, c);
+}
+
+function cambiaDirezione(){
+  const altra = stato.sel.dir === "O" ? "V" : "O";
+  if(parolaIn(stato.sel.riga, stato.sel.col, altra)){
+    stato.sel.dir = altra;
+    evidenzia();
+  }
+}
+
+function parolaSuccessiva(){
+  const attuale = parolaCorrente();
+  if(!attuale) return;
+  const indice = stato.parole.indexOf(attuale);
+  const prossima = stato.parole[(indice + 1) % stato.parole.length];
+  stato.sel = { riga:prossima.riga, col:prossima.col, dir:prossima.dir };
+  vaiA(prossima.riga, prossima.col);
+}
+
+function evidenzia(){
+  for(const cella of stato.caselle.values()) cella.classList.remove("parola", "attiva");
+  const parola = parolaCorrente();
+  if(parola){
+    for(const [r, c] of celleDellaParola(parola)){
+      const cella = stato.caselle.get(chiave(r, c));
+      if(cella) cella.classList.add("parola");
+    }
+  }
+  const attiva = stato.caselle.get(chiave(stato.sel.riga, stato.sel.col));
+  if(attiva) attiva.classList.add("attiva");
+  aggiornaElenchi();
+}
+
+function parolaCompleta(w){
+  return celleDellaParola(w).every(([r, c]) => stato.risposte.get(chiave(r, c)) === stato.griglia[r][c]);
+}
+
+function aggiornaElenchi(){
+  const attuale = parolaCorrente();
+  for(const elenco of [$("elencoOrizzontali"), $("elencoVerticali")]){
+    for(const voce of elenco.children){
+      const w = stato.parole.find(p => p.num === Number(voce.dataset.num) && p.dir === voce.dataset.dir);
+      voce.classList.toggle("attiva", !!attuale && attuale === w);
+      voce.classList.toggle("risolta", !!w && parolaCompleta(w));
+    }
+  }
+}
+
+function disegnaDefinizioni(){
+  const nascondi = stato.tipo === "crittografato" && !stato.definizioniVisibili;
+  $("elenchi").hidden = nascondi;
+  document.querySelector(".tavolo").classList.toggle("senzaDefinizioni", nascondi);
+  if(nascondi) return;
+  for(const dir of ["O", "V"]){
+    const elenco = dir === "O" ? $("elencoOrizzontali") : $("elencoVerticali");
+    elenco.innerHTML = "";
+    for(const w of stato.parole.filter(p => p.dir === dir)){
+      const voce = document.createElement("li");
+      voce.dataset.num = w.num;
+      voce.dataset.dir = w.dir;
+      const numero = document.createElement("b");
+      numero.textContent = w.num + ".";
+      const testo = document.createElement("span");
+      testo.textContent = (w.d ? w.d : "Parola da indovinare") + " (" + w.p.length + " lettere)";
+      voce.appendChild(numero);
+      voce.appendChild(testo);
+      voce.addEventListener("click", () => {
+        stato.sel = { riga:w.riga, col:w.col, dir:w.dir };
+        vaiA(w.riga, w.col);
+        evidenzia();
+      });
+      elenco.appendChild(voce);
+    }
+  }
+  aggiornaElenchi();
+}
+
+function disegnaSerbatoio(){
+  const pannello = $("pannelloSerbatoio");
+  pannello.hidden = stato.tipo !== "facilitato";
+  if(pannello.hidden) return;
+  const elenco = $("serbatoio");
+  elenco.innerHTML = "";
+  const parole = stato.parole.map(w => w.p).sort((a, b) => a.length - b.length || a.localeCompare(b, "it"));
+  for(const p of parole){
+    const voce = document.createElement("li");
+    voce.textContent = p;
+    const trovata = stato.parole.filter(w => w.p === p).every(parolaCompleta);
+    if(trovata) voce.classList.add("usata");
+    elenco.appendChild(voce);
+  }
+}
+
+function disegnaLegenda(){
+  const pannello = $("pannelloLegenda");
+  pannello.hidden = stato.tipo !== "crittografato";
+  if(pannello.hidden) return;
+  const trovate = new Map();
+  for(let r = 0; r < stato.N; r++){
+    for(let c = 0; c < stato.N; c++){
+      const l = stato.griglia[r][c];
+      if(!l) continue;
+      const risposta = stato.risposte.get(chiave(r, c));
+      if(risposta) trovate.set(stato.codice.get(l), risposta);
+    }
+  }
+  const elenco = $("legenda");
+  elenco.innerHTML = "";
+  const codici = Array.from(stato.codice.values()).sort((a, b) => a - b);
+  for(const n of codici){
+    const voce = document.createElement("li");
+    const lettera = document.createElement("b");
+    lettera.textContent = trovate.get(n) || "";
+    const numero = document.createElement("span");
+    numero.textContent = n;
+    voce.appendChild(lettera);
+    voce.appendChild(numero);
+    if(!trovate.has(n)) voce.classList.add("nota");
+    elenco.appendChild(voce);
+  }
+}
+
+function aggiornaContatori(){
+  let totale = 0, scritte = 0;
+  for(let r = 0; r < stato.N; r++){
+    for(let c = 0; c < stato.N; c++){
+      if(!stato.griglia[r][c]) continue;
+      totale++;
+      if(stato.risposte.get(chiave(r, c))) scritte++;
+    }
+  }
+  $("contaParole").textContent = stato.parole.length;
+  $("contaCaselle").textContent = totale;
+  $("contaCompletamento").textContent = totale ? Math.round(scritte * 100 / totale) + "%" : "0%";
+  disegnaSerbatoio();
+}
+
+function avviaCronometro(){
+  clearInterval(stato.cronometro);
+  stato.avvio = Date.now();
+  stato.cronometro = setInterval(() => {
+    const secondi = Math.floor((Date.now() - stato.avvio) / 1000);
+    const m = String(Math.floor(secondi / 60)).padStart(2, "0");
+    const s = String(secondi % 60).padStart(2, "0");
+    $("contaTempo").textContent = m + ":" + s;
+  }, 1000);
+}
+
+/** Sceglie la forma singolare o plurale di un messaggio. */
+function plurale(quanti, singolare, molti){
+  return quanti === 1 ? singolare : molti;
+}
+
+function avviso(testo, genere){
+  const casella = $("messaggioGioco");
+  casella.textContent = testo;
+  casella.className = "messaggio " + (genere || "");
+  casella.hidden = !testo;
+}
+
+/* -------------------------------------------------------------------------
+   5) COMANDI DI GIOCO
+   ------------------------------------------------------------------------- */
+function suggerisciLettera(){
+  const parola = parolaCorrente();
+  if(!parola) return;
+  const celle = celleDellaParola(parola);
+  let scelta = celle.find(([r, c]) => r === stato.sel.riga && c === stato.sel.col && !stato.date.has(chiave(r, c)) && stato.risposte.get(chiave(r, c)) !== stato.griglia[r][c]);
+  if(!scelta) scelta = celle.find(([r, c]) => !stato.date.has(chiave(r, c)) && stato.risposte.get(chiave(r, c)) !== stato.griglia[r][c]);
+  if(!scelta){ avviso("Questa parola è già completa e giusta.", "buono"); return; }
+  const [r, c] = scelta;
+  scriviLettera(r, c, stato.griglia[r][c]);
+  stato.aiuti.add(chiave(r, c));
+  const cella = stato.caselle.get(chiave(r, c));
+  if(cella) cella.classList.add("aiuto");
+  avviso("Ecco una lettera in regalo: la casella suggerita resta segnata in colore diverso.", "avviso");
+  aggiornaContatori();
+}
+
+function rivelaParola(){
+  const parola = parolaCorrente();
+  if(!parola) return;
+  for(const [r, c] of celleDellaParola(parola)){
+    scriviLettera(r, c, stato.griglia[r][c]);
+    stato.aiuti.add(chiave(r, c));
+    const cella = stato.caselle.get(chiave(r, c));
+    if(cella) cella.classList.add("aiuto");
+  }
+  avviso("Parola svelata: " + parola.p + ".", "avviso");
+  aggiornaContatori();
+}
+
+function segnaEsito(celle){
+  let giuste = 0, sbagliate = 0, vuote = 0;
+  for(const [r, c] of celle){
+    const k = chiave(r, c);
+    const cella = stato.caselle.get(k);
+    if(!cella) continue;
+    cella.classList.remove("giusta", "sbagliata");
+    const risposta = stato.risposte.get(k);
+    if(!risposta){ vuote++; continue; }
+    if(risposta === stato.griglia[r][c]){ cella.classList.add("giusta"); giuste++; }
+    else { cella.classList.add("sbagliata"); sbagliate++; }
+  }
+  return { giuste:giuste, sbagliate:sbagliate, vuote:vuote };
+}
+
+function verificaParola(){
+  const parola = parolaCorrente();
+  if(!parola) return;
+  const esito = segnaEsito(celleDellaParola(parola));
+  if(esito.sbagliate === 0 && esito.vuote === 0) avviso("Parola giusta: " + parola.p + ".", "buono");
+  else if(esito.sbagliate === 0) avviso("Per ora nessun errore, ma " + plurale(esito.vuote, "manca ancora una lettera", "mancano ancora " + esito.vuote + " lettere") + ".", "avviso");
+  else avviso(plurale(esito.sbagliate, "C'è una lettera da correggere: la trovi", "Ci sono " + esito.sbagliate + " lettere da correggere: le trovi") + " sul fondo rosso.", "cattivo");
+}
+
+function verificaTutto(){
+  const celle = [];
+  for(let r = 0; r < stato.N; r++){
+    for(let c = 0; c < stato.N; c++) if(stato.griglia[r][c]) celle.push([r, c]);
+  }
+  const esito = segnaEsito(celle);
+  if(esito.sbagliate === 0 && esito.vuote === 0){
+    clearInterval(stato.cronometro);
+    avviso("Cruciverba completato e tutto giusto. Tempo impiegato: " + $("contaTempo").textContent + ".", "buono");
+  } else if(esito.sbagliate === 0){
+    avviso("Nessun errore: " + plurale(esito.vuote, "resta una casella da riempire", "restano " + esito.vuote + " caselle da riempire") + ".", "avviso");
+  } else {
+    avviso(plurale(esito.sbagliate, "Una lettera è sbagliata", esito.sbagliate + " lettere sono sbagliate") + ". Caselle ancora vuote: " + esito.vuote + ".", "cattivo");
+  }
+}
+
+function pulisciTutto(){
+  for(const k of Array.from(stato.risposte.keys())) if(!stato.date.has(k)) stato.risposte.delete(k);
+  stato.aiuti.clear();
+  disegnaGriglia();
+  disegnaLegenda();
+  aggiornaContatori();
+  avviso("Schema ripulito: restano solo le lettere regalate all'inizio.", "avviso");
+}
+
+function mostraSoluzione(){
+  for(let r = 0; r < stato.N; r++){
+    for(let c = 0; c < stato.N; c++){
+      if(!stato.griglia[r][c]) continue;
+      stato.risposte.set(chiave(r, c), stato.griglia[r][c]);
+      stato.aiuti.add(chiave(r, c));
+    }
+  }
+  clearInterval(stato.cronometro);
+  disegnaGriglia();
+  disegnaLegenda();
+  aggiornaContatori();
+  avviso("Ecco la soluzione completa.", "avviso");
+}
+
+/** Prova ad aggiungere altre parole dell'archivio negli spazi ancora liberi. */
+function aggiungiParole(quante){
+  const usate = new Set(stato.parole.map(w => w.p));
+  const candidati = mescola(stato.pool.filter(v => !usate.has(v.p)));
+  const nuove = [];
+  for(const c of candidati){
+    if(nuove.length >= quante) break;
+    const posto = migliorPosto(stato.griglia, stato.parole, c.p, stato.N);
+    if(!posto) continue;
+    scriviSullaGriglia(stato.griglia, c.p, posto.riga, posto.col, posto.dir);
+    const parola = Object.assign({}, c, { riga:posto.riga, col:posto.col, dir:posto.dir });
+    stato.parole.push(parola);
+    nuove.push(parola);
+  }
+  if(!nuove.length) return 0;
+  numeraSchema();
+  applicaAiuti(nuove, false);
+  disegnaDefinizioni();
+  disegnaGriglia();
+  disegnaLegenda();
+  aggiornaContatori();
+  return nuove.length;
+}
+
+/* -------------------------------------------------------------------------
+   6) ESPORTAZIONI
+   ------------------------------------------------------------------------- */
+function scappa(testo){
+  return String(testo).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function tabellaSchema(conLettere){
+  const q = riquadro(stato.parole);
+  let html = '<table class="schema">';
+  for(let r = q.r1; r <= q.r2; r++){
+    html += "<tr>";
+    for(let c = q.c1; c <= q.c2; c++){
+      const lettera = stato.griglia[r][c];
+      if(!lettera){ html += '<td class="nera"></td>'; continue; }
+      const numero = stato.numeri.get(chiave(r, c));
+      const etichetta = stato.tipo === "crittografato" ? stato.codice.get(lettera) : (numero || "");
+      const dentro = conLettere ? lettera : (stato.date.has(chiave(r, c)) ? lettera : "");
+      html += '<td><span class="segno">' + etichetta + "</span>" + scappa(dentro) + "</td>";
+    }
+    html += "</tr>";
+  }
+  return html + "</table>";
+}
+
+function elencoDefinizioni(){
+  if(stato.tipo === "crittografato" && !stato.definizioniVisibili) return "";
+  let html = '<div class="colonne">';
+  for(const dir of ["O", "V"]){
+    html += "<div><h3>" + (dir === "O" ? "Orizzontali" : "Verticali") + "</h3><ul>";
+    for(const w of stato.parole.filter(p => p.dir === dir)){
+      html += "<li><b>" + w.num + ".</b> " + scappa(w.d || "Parola da indovinare") + " (" + w.p.length + " lettere)</li>";
+    }
+    html += "</ul></div>";
+  }
+  return html + "</div>";
+}
+
+function costruisciDocumento(perStampa){
+  const titolo = stato.titolo || "Cruciverba";
+  const nomeTipo = { normale:"schema normale", facilitato:"schema facilitato", crittografato:"schema crittografato" }[stato.tipo];
+  const soluzione = stato.parole.map(w => w.num + " " + (w.dir === "O" ? "orizzontale" : "verticale") + ": " + w.p).join(" &middot; ");
+  let legenda = "";
+  if(stato.tipo === "crittografato"){
+    const righe = Array.from(stato.codice.entries()).sort((a, b) => a[1] - b[1])
+      .map(([l, n]) => "<li><b>" + n + "</b>" + (stato.letterePalesi.has(l) ? l : "") + "</li>").join("");
+    legenda = "<h3>Tabella del codice</h3><ul class=\"codici\">" + righe + "</ul>";
+  }
+  return '<!doctype html>\n<html lang="it"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    "<title>" + scappa(titolo) + "</title><style>" +
+    'body{font-family:Georgia,"Times New Roman",serif;color:#111;background:#fff;margin:0;padding:28px;line-height:1.5}' +
+    ".foglio{max-width:860px;margin:0 auto}" +
+    "h1{font-size:1.7rem;margin:0 0 4px}h2{font-size:1.1rem;margin:26px 0 8px}" +
+    "h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;font-family:system-ui,sans-serif;margin:0 0 6px}" +
+    ".occhiello{font-family:system-ui,sans-serif;font-size:.8rem;color:#555;margin:0 0 18px}" +
+    "table.schema{border-collapse:collapse;margin:0 auto 18px}" +
+    "table.schema td{width:34px;height:34px;border:1px solid #111;position:relative;text-align:center;vertical-align:middle;font-size:18px;font-weight:700;font-family:system-ui,sans-serif}" +
+    "table.schema td.nera{background:#111}" +
+    ".segno{position:absolute;top:1px;left:2px;font-size:9px;font-weight:400;color:#444}" +
+    ".colonne{display:flex;gap:30px;flex-wrap:wrap}.colonne>div{flex:1 1 260px}" +
+    "ul{margin:0;padding-left:1.1em;font-size:.94rem}li{margin-bottom:4px}" +
+    "ul.codici{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none}" +
+    "ul.codici li{border:1px solid #111;border-radius:6px;padding:3px 7px;font-family:system-ui,sans-serif;font-size:.8rem}" +
+    "ul.codici li b{display:block;color:#555;font-weight:400}" +
+    ".soluzione{font-size:.82rem;color:#333;border-top:1px solid #bbb;padding-top:10px;margin-top:26px;font-family:system-ui,sans-serif}" +
+    "@media print{body{padding:0}.soluzione{page-break-before:always}}" +
+    "</style></head><body><div class=\"foglio\">" +
+    "<h1>" + scappa(titolo) + "</h1>" +
+    '<p class="occhiello">' + nomeTipo + ", " + stato.parole.length + " parole" +
+    (stato.autore ? " &middot; a cura di " + scappa(stato.autore) : "") + "</p>" +
+    tabellaSchema(false) + legenda + elencoDefinizioni() +
+    '<div class="soluzione"><h2>Soluzione</h2>' + tabellaSchema(true) + "<p>" + soluzione + "</p></div>" +
+    "</div>" + (perStampa ? "<script>window.onload=function(){window.print()}<\/script>" : "") +
+    "</body></html>";
+}
+
+/** Consegna il file: dentro claude.ai passa dal salvataggio della piattaforma,
+    altrove usa il normale collegamento di scaricamento del navigatore. */
+async function consegnaDaPiattaforma(nome, contenuto){
+  try{
+    if(typeof window.claude === "undefined" || !window.claude || typeof window.claude.use !== "function") return false;
+    const salvataggio = await window.claude.use("downloads");
+    if(!salvataggio) return false;
+    await salvataggio.save({ filename:nome, data:contenuto });
+    return true;
+  } catch(errore){
+    if(errore && errore.code === "declined") return true;
+    return false;
+  }
+}
+
+async function scaricaFile(nome, tipo, contenuto){
+  if(await consegnaDaPiattaforma(nome, contenuto)) return;
+  const blob = new Blob([contenuto], { type:tipo + ";charset=utf-8" });
+  const indirizzo = URL.createObjectURL(blob);
+  const collegamento = document.createElement("a");
+  collegamento.href = indirizzo;
+  collegamento.download = nome;
+  document.body.appendChild(collegamento);
+  collegamento.click();
+  document.body.removeChild(collegamento);
+  setTimeout(() => URL.revokeObjectURL(indirizzo), 2000);
+}
+
+function nomeFile(estensione){
+  const base = normalizza(stato.titolo || "cruciverba").toLowerCase() || "cruciverba";
+  const oggi = new Date().toISOString().slice(0, 10);
+  return base.slice(0, 40) + "-" + oggi + "." + estensione;
+}
+
+function esportaHtml(){
+  scaricaFile(nomeFile("html"), "text/html", costruisciDocumento(false));
+  avviso("Documento HTML salvato: contiene lo schema, le definizioni e la soluzione.", "buono");
+}
+
+function esportaCsv(){
+  const q = riquadro(stato.parole);
+  const righe = [["Numero", "Direzione", "Parola", "Definizione", "Riga", "Colonna", "Lettere"]];
+  for(const w of stato.parole){
+    righe.push([
+      w.num,
+      w.dir === "O" ? "Orizzontale" : "Verticale",
+      w.p,
+      (w.d || "").replace(/"/g, "'"),
+      w.riga - q.r1 + 1,
+      w.col - q.c1 + 1,
+      w.p.length
+    ]);
+  }
+  const testo = righe.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(";")).join("\r\n");
+  scaricaFile(nomeFile("csv"), "text/csv", "﻿" + testo);
+  avviso("Tabella CSV salvata: si apre con qualunque foglio di calcolo.", "buono");
+}
+
+function stampa(){
+  const finestra = window.open("", "_blank");
+  if(!finestra){
+    avviso("Il navigatore ha bloccato la nuova finestra: uso la stampa di questa pagina.", "avviso");
+    window.print();
+    return;
+  }
+  finestra.document.open();
+  finestra.document.write(costruisciDocumento(true));
+  finestra.document.close();
+}
+
+/* -------------------------------------------------------------------------
+   7) CREAZIONE GUIDATA E AVVIO
+   ------------------------------------------------------------------------- */
+let passoCorrente = 1;
+const PASSI = 5;
+
+function mostraPasso(n){
+  passoCorrente = Math.max(1, Math.min(PASSI, n));
+  for(const blocco of document.querySelectorAll(".passo")){
+    blocco.classList.toggle("visibile", Number(blocco.dataset.passo) === passoCorrente);
+  }
+  for(const voce of document.querySelectorAll("#tappe li")){
+    const numero = Number(voce.dataset.tappa);
+    voce.classList.toggle("attiva", numero === passoCorrente);
+    voce.classList.toggle("fatta", numero < passoCorrente);
+  }
+  $("passoIndietro").disabled = passoCorrente === 1;
+  $("passoAvanti").hidden = passoCorrente === PASSI;
+  $("creaCruciverba").hidden = passoCorrente !== PASSI;
+}
+
+function disegnaCategorie(){
+  const contenitore = $("sceltaCategorie");
+  contenitore.innerHTML = "";
+  ARCHIVIO.forEach((gruppo, indice) => {
+    const etichetta = document.createElement("label");
+    etichetta.className = "scelta";
+    const casella = document.createElement("input");
+    casella.type = "checkbox";
+    casella.value = gruppo.chiave;
+    casella.checked = indice < 3;
+    const titolo = document.createElement("span");
+    titolo.className = "titolo";
+    titolo.textContent = gruppo.nome;
+    const nota = document.createElement("span");
+    nota.className = "nota";
+    nota.textContent = (gruppo.nota ? gruppo.nota + " " : "") + gruppo.parole.length + " parole disponibili.";
+    etichetta.appendChild(casella);
+    etichetta.appendChild(titolo);
+    etichetta.appendChild(nota);
+    contenitore.appendChild(etichetta);
+  });
+}
+
+function categorieScelte(){
+  return Array.from(document.querySelectorAll("#sceltaCategorie input:checked")).map(c => c.value);
+}
+
+function valoreRadio(nome){
+  const scelto = document.querySelector('input[name="' + nome + '"]:checked');
+  return scelto ? scelto.value : "";
+}
+
+function leggiParolePersonali(){
+  const righe = $("paroleProprie").value.split("\n");
+  const elenco = [];
+  for(const riga of righe){
+    if(!riga.trim()) continue;
+    const taglio = riga.indexOf(";");
+    const parola = normalizza(taglio >= 0 ? riga.slice(0, taglio) : riga);
+    const definizione = taglio >= 0 ? riga.slice(taglio + 1).trim() : "";
+    if(parola.length >= 3) elenco.push({ p:parola, d:definizione });
+  }
+  return elenco;
+}
+
+function messaggioCreazione(testo, genere){
+  const casella = $("messaggioCreazione");
+  casella.textContent = testo;
+  casella.className = "messaggio " + (genere || "");
+  casella.hidden = !testo;
+}
+
+function creaCruciverba(){
+  const categorie = categorieScelte();
+  const personali = leggiParolePersonali();
+  if(!categorie.length && personali.length < 4){
+    mostraPasso(1);
+    messaggioCreazione("Scegli almeno una categoria oppure scrivi almeno quattro parole tue.", "cattivo");
+    return;
+  }
+  const difficolta = valoreRadio("difficolta") || "facile";
+  const param = PARAMETRI[difficolta];
+  const dimensione = Number(valoreRadio("dimensione") || 13);
+  const massimoParole = Number($("numeroParole").value);
+  const pool = raccogliPool(categorie, param, personali);
+  if(pool.length < 6){
+    messaggioCreazione("Le parole disponibili sono troppo poche: aggiungi una categoria oppure alza la difficoltà.", "cattivo");
+    return;
+  }
+
+  const esito = generaSchema(pool, dimensione, massimoParole);
+  if(!esito || esito.parole.length < 3){
+    messaggioCreazione("Non sono riuscito a incrociare abbastanza parole: prova con uno schema più grande o con più categorie.", "cattivo");
+    return;
+  }
+
+  stato.N = esito.N;
+  stato.griglia = esito.griglia;
+  stato.parole = esito.parole;
+  stato.pool = pool;
+  stato.tipo = valoreRadio("tipo") || "normale";
+  stato.difficolta = difficolta;
+  stato.categorie = categorie;
+  stato.risposte = new Map();
+  stato.date = new Set();
+  stato.aiuti = new Set();
+  stato.codice = new Map();
+  stato.prossimoCodice = 1;
+  stato.letterePalesi = new Set();
+  stato.definizioniVisibili = stato.tipo !== "crittografato";
+  stato.titolo = $("titoloScelto").value.trim() || "Cruciverba del " + new Date().toLocaleDateString("it-IT", { day:"numeric", month:"long", year:"numeric" });
+  stato.autore = $("autoreScelto").value.trim();
+
+  numeraSchema();
+  applicaAiuti(stato.parole, true);
+
+  const nomiCategorie = ARCHIVIO.filter(g => categorie.includes(g.chiave)).map(g => g.nome);
+  const q = riquadro(stato.parole);
+  const nomeTipo = { normale:"normale", facilitato:"facilitato", crittografato:"crittografato" }[stato.tipo];
+  $("titoloGioco").textContent = stato.titolo;
+  $("dettagliGioco").textContent = "Schema " + nomeTipo + ", difficoltà " + difficolta + ", griglia di " +
+    q.righe + " righe per " + q.colonne + " colonne" +
+    (nomiCategorie.length ? ". Categorie: " + nomiCategorie.join(", ") + "." : ".") +
+    (stato.autore ? " A cura di " + stato.autore + "." : "");
+  $("bDefinizioni").hidden = stato.tipo !== "crittografato";
+  $("bDefinizioni").textContent = "Mostra le definizioni";
+
+  $("pannelloCreazione").hidden = true;
+  $("pannelloGioco").hidden = false;
+  messaggioCreazione("", "");
+
+  disegnaDefinizioni();
+  disegnaGriglia();
+  disegnaLegenda();
+  aggiornaContatori();
+  avviaCronometro();
+
+  const prima = stato.parole[0];
+  stato.sel = { riga:prima.riga, col:prima.col, dir:prima.dir };
+  evidenzia();
+
+  const mancanti = personali.filter(v => !stato.parole.some(w => w.p === v.p)).map(v => v.p);
+  if(mancanti.length){
+    avviso(plurale(mancanti.length, "Non sono riuscito a incrociare questa parola tua: ", "Non sono riuscito a incrociare queste parole tue: ") + mancanti.join(", ") + ". Prova con uno schema più grande.", "avviso");
+  } else if(stato.tipo === "crittografato"){
+    avviso("Ogni numero vale sempre per la stessa lettera: parti dalle lettere già scritte e prosegui per deduzione.", "avviso");
+  } else {
+    avviso("Schema pronto: buon divertimento.", "buono");
+  }
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function nuovoCruciverba(){
+  clearInterval(stato.cronometro);
+  $("contaTempo").textContent = "00:00";
+  $("pannelloGioco").hidden = true;
+  $("pannelloCreazione").hidden = false;
+  avviso("", "");
+  mostraPasso(1);
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function collegaComandi(){
+  $("passoAvanti").addEventListener("click", () => mostraPasso(passoCorrente + 1));
+  $("passoIndietro").addEventListener("click", () => mostraPasso(passoCorrente - 1));
+  $("creaCruciverba").addEventListener("click", creaCruciverba);
+  $("tutteCategorie").addEventListener("click", () => {
+    document.querySelectorAll("#sceltaCategorie input").forEach(c => { c.checked = true; });
+  });
+  $("nessunaCategoria").addEventListener("click", () => {
+    document.querySelectorAll("#sceltaCategorie input").forEach(c => { c.checked = false; });
+  });
+  $("numeroParole").addEventListener("input", (e) => { $("valoreParole").textContent = e.target.value; });
+  document.querySelectorAll('input[name="difficolta"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      const suggerito = PARAMETRI[radio.value].parole;
+      $("numeroParole").value = suggerito;
+      $("valoreParole").textContent = suggerito;
+    });
+  });
+
+  $("bSuggerisci").addEventListener("click", suggerisciLettera);
+  $("bRivelaParola").addEventListener("click", rivelaParola);
+  $("bVerificaParola").addEventListener("click", verificaParola);
+  $("bVerificaTutto").addEventListener("click", verificaTutto);
+  $("bPulisci").addEventListener("click", pulisciTutto);
+  $("bSoluzione").addEventListener("click", mostraSoluzione);
+  $("bStampa").addEventListener("click", stampa);
+  $("bEsportaHtml").addEventListener("click", esportaHtml);
+  $("bEsportaCsv").addEventListener("click", esportaCsv);
+  $("bNuovo").addEventListener("click", nuovoCruciverba);
+  $("bCompleta").addEventListener("click", () => {
+    const aggiunte = aggiungiParole(8);
+    if(aggiunte) avviso(plurale(aggiunte, "Ho incrociato un'altra parola", "Ho incrociato altre " + aggiunte + " parole") + " negli spazi liberi. Le definizioni nuove sono negli elenchi.", "buono");
+    else avviso("Non c'è più spazio utile: lo schema è già pieno.", "avviso");
+  });
+  $("bParolaCasuale").addEventListener("click", () => {
+    const aggiunte = aggiungiParole(1);
+    if(aggiunte) avviso("Parola aggiunta: guarda gli elenchi delle definizioni.", "buono");
+    else avviso("Nessuna parola dell'archivio riesce a incrociarsi negli spazi rimasti.", "avviso");
+  });
+  $("bDefinizioni").addEventListener("click", () => {
+    stato.definizioniVisibili = !stato.definizioniVisibili;
+    $("bDefinizioni").textContent = stato.definizioniVisibili ? "Nascondi le definizioni" : "Mostra le definizioni";
+    disegnaDefinizioni();
+  });
+
+  let attesa = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(attesa);
+    attesa = setTimeout(() => { if(stato.parole.length) disegnaGriglia(); }, 150);
+  });
+}
+
+function avvia(){
+  disegnaCategorie();
+  collegaComandi();
+  mostraPasso(1);
+}
+
+if(typeof document !== "undefined") avvia();
+</script>
+</body>
+</html>
