@@ -18,6 +18,8 @@ installare nulla, senza connessione e senza librerie esterne.
 | Schema normale | Definizioni numerate per le orizzontali e per le verticali |
 | Schema facilitato | Alcune lettere sono già scritte e sotto la griglia compare l'elenco delle parole da collocare |
 | Schema crittografato | Nessuna definizione in chiaro: ogni lettera diventa un numero, si parte da poche lettere regalate e la lettera scoperta si propaga a tutte le caselle con lo stesso numero |
+| Compattezza dello schema | Arioso, equilibrato o compatto: dopo le parole di partenza il programma ne aggiunge altre finché lo schema non raggiunge la densità scelta |
+| Caselle vuote | Si passa con un comando dallo schema libero, senza caselle nere disegnate, allo schema classico con il fondo nero |
 | Suggerimenti | «Suggerisci una lettera» e «Rivela la parola» lavorano sulla parola selezionata |
 | Verifica | «Verifica la parola» e «Verifica tutto» segnano in verde le lettere giuste e in rosso quelle sbagliate |
 | Parole a caso | «Aggiungi una parola a caso» e «Riempi gli spazi vuoti» incrociano altre parole d'archivio negli spazi ancora liberi |

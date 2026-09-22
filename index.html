@@ -199,6 +199,9 @@ button.tenue{border-color:var(--bordo);color:var(--tenue)}
 }
 .cella{position:relative;width:var(--lato);height:var(--lato);background:var(--carta)}
 .cella.vuota{background:var(--bloccata)}
+.griglia.libera{background:transparent;border-color:transparent}
+.griglia.libera .cella.vuota{background:transparent;box-shadow:none}
+.griglia.libera .cella{box-shadow:inset 0 0 0 1px var(--bordo-forte)}
 .cella input{
   width:100%;height:100%;border:0;border-radius:0;padding:0;
   text-align:center;text-transform:uppercase;
@@ -277,6 +280,7 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
   .tavolo{grid-template-columns:1fr}
   .cella{box-shadow:inset 0 0 0 1px #000}
   .cella.vuota{background:#000}
+  .griglia.libera .cella.vuota{background:#fff;box-shadow:none}
   .cella.parola,.cella.attiva,.cella.giusta,.cella.sbagliata{background:#fff}
   .cella.attiva input{color:#000}
 }
@@ -363,8 +367,19 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
         <label class="scelta"><input type="radio" name="dimensione" value="21">
           <span class="titolo">Molto grande</span><span class="nota">Ventuno caselle per lato, la misura da pagina intera.</span></label>
       </div>
-      <label class="campo"><span>Numero massimo di parole: <output id="valoreParole">16</output></span>
+      <h3 style="margin-top:24px">Quanto fitto deve essere lo schema</h3>
+      <p class="guida">Dopo avere incrociato le parole di partenza il programma continua ad aggiungerne finché lo schema non raggiunge la compattezza che scegli qui: meno caselle nere, più definizioni.</p>
+      <div class="scelte">
+        <label class="scelta"><input type="radio" name="compattezza" value="0.50">
+          <span class="titolo">Arioso</span><span class="nota">Circa metà delle caselle da riempire: schema veloce, adatto ai bambini.</span></label>
+        <label class="scelta"><input type="radio" name="compattezza" value="0.64" checked>
+          <span class="titolo">Equilibrato</span><span class="nota">Quasi due caselle su tre da riempire: la misura da giornale.</span></label>
+        <label class="scelta"><input type="radio" name="compattezza" value="0.78">
+          <span class="titolo">Compatto</span><span class="nota">Schema fitto, con il minor numero possibile di caselle nere.</span></label>
+      </div>
+      <label class="campo"><span>Parole di partenza: <output id="valoreParole">16</output></span>
         <input type="range" id="numeroParole" min="6" max="40" value="16" step="1"></label>
+      <p class="guida">È il numero di parole che il programma incrocia prima di compattare: alla fine quasi sempre saranno di più.</p>
     </div>
 
     <div class="passo" data-passo="5">
@@ -405,6 +420,7 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
       <button type="button" id="bVerificaTutto" class="principale">Verifica tutto</button>
       <button type="button" id="bCompleta">Riempi gli spazi vuoti</button>
       <button type="button" id="bParolaCasuale">Aggiungi una parola a caso</button>
+      <button type="button" id="bCaselleNere" class="tenue">Mostra le caselle nere</button>
       <button type="button" id="bPulisci" class="tenue">Cancella tutto</button>
       <button type="button" id="bSoluzione" class="tenue">Mostra la soluzione</button>
       <button type="button" id="bDefinizioni" class="tenue" hidden>Mostra le definizioni</button>
@@ -1063,7 +1079,17 @@ function scriviSullaGriglia(g, parola, r, c, dir){
 }
 
 /** Cerca il posto migliore per una parola dentro uno schema già avviato. */
-function migliorPosto(g, poste, parola, N){
+/** Quante caselle una parola aggiungerebbe fuori dal riquadro attuale. */
+function sconfinamento(riga, col, lunghezza, dir, q){
+  const rf = dir === "V" ? riga + lunghezza - 1 : riga;
+  const cf = dir === "O" ? col + lunghezza - 1 : col;
+  return Math.max(0, q.r1 - riga) + Math.max(0, rf - q.r2) +
+         Math.max(0, q.c1 - col) + Math.max(0, cf - q.c2);
+}
+
+/** Cerca il posto migliore. Con un riquadro di riferimento preferisce le
+    posizioni che tengono lo schema fitto invece di allargarlo. */
+function migliorPosto(g, poste, parola, N, riquadroAttuale){
   let scelta = null;
   const centro = (N - 1) / 2;
   for(let i = 0; i < parola.length; i++){
@@ -1076,8 +1102,9 @@ function migliorPosto(g, poste, parola, N){
         const incroci = verificaPosto(g, parola, r, c, dir, N);
         if(incroci < 1) continue;
         const distanza = Math.abs(r - centro) + Math.abs(c - centro);
-        const punti = incroci * 14 - distanza;
-        if(!scelta || punti > scelta.punti) scelta = { riga:r, col:c, dir:dir, punti:punti };
+        const fuori = riquadroAttuale ? sconfinamento(r, c, parola.length, dir, riquadroAttuale) : 0;
+        const punti = incroci * 26 - distanza - fuori * 9;
+        if(!scelta || punti > scelta.punti) scelta = { riga:r, col:c, dir:dir, punti:punti, incroci:incroci };
       }
     }
   }
@@ -1136,8 +1163,13 @@ function punteggioSchema(esito){
       if(orizzontale && verticale) incroci++;
     }
   }
+  let bianche = 0;
+  for(let r = q.r1; r <= q.r2; r++){
+    for(let c = q.c1; c <= q.c2; c++) if(esito.griglia[r][c]) bianche++;
+  }
   const personali = esito.parole.filter(w => w.pers).length;
-  return esito.parole.length * 1000 + personali * 700 + incroci * 12 - q.righe * q.colonne;
+  const quota = bianche / (q.righe * q.colonne);
+  return esito.parole.length * 500 + personali * 900 + Math.round(quota * 6000) + incroci * 25;
 }
 
 /** Compone lo schema provando più volte e tenendo il risultato migliore. */
@@ -1163,7 +1195,7 @@ const stato = {
   sel:{ riga:0, col:0, dir:"O" },
   caselle:new Map(), campi:new Map(),
   codice:new Map(), prossimoCodice:1, letterePalesi:new Set(),
-  definizioniVisibili:true,
+  definizioniVisibili:true, nereVisibili:false,
   avvio:0, cronometro:0
 };
 
@@ -1250,6 +1282,7 @@ function disegnaGriglia(){
   const contenitore = $("griglia");
   const q = riquadro(stato.parole);
   contenitore.innerHTML = "";
+  contenitore.classList.toggle("libera", !stato.nereVisibili);
   contenitore.style.gridTemplateColumns = "repeat(" + q.colonne + ", var(--lato))";
   contenitore.style.setProperty("--lato", latoCasella(q.colonne) + "px");
   stato.caselle = new Map();
@@ -1641,19 +1674,54 @@ function mostraSoluzione(){
 }
 
 /** Prova ad aggiungere altre parole dell'archivio negli spazi ancora liberi. */
-function aggiungiParole(quante){
+/** Quanta parte del riquadro è occupata da caselle da riempire. */
+function riempimentoAttuale(){
+  const q = riquadro(stato.parole);
+  let bianche = 0;
+  for(let r = q.r1; r <= q.r2; r++){
+    for(let c = q.c1; c <= q.c2; c++) if(stato.griglia[r][c]) bianche++;
+  }
+  return { quota:bianche / (q.righe * q.colonne), bianche:bianche, riquadro:q };
+}
+
+/** Riempimento che si otterrebbe mettendo quella parola in quel punto. */
+function riempimentoPrevisto(attuale, parola, posto){
+  const q = attuale.riquadro;
+  const rf = posto.dir === "V" ? posto.riga + parola.length - 1 : posto.riga;
+  const cf = posto.dir === "O" ? posto.col + parola.length - 1 : posto.col;
+  const righe = Math.max(q.r2, rf) - Math.min(q.r1, posto.riga) + 1;
+  const colonne = Math.max(q.c2, cf) - Math.min(q.c1, posto.col) + 1;
+  return (attuale.bianche + parola.length - posto.incroci) / (righe * colonne);
+}
+
+/** Incrocia altre parole dell'archivio: si ferma al numero chiesto oppure
+    quando lo schema ha raggiunto la compattezza voluta. */
+function inserisciParole(opzioni){
+  const quante = opzioni.quante === undefined ? Infinity : opzioni.quante;
+  const obiettivo = opzioni.obiettivo === undefined ? 1 : opzioni.obiettivo;
+  const compatto = opzioni.compatto !== false;
   const usate = new Set(stato.parole.map(w => w.p));
   const candidati = mescola(stato.pool.filter(v => !usate.has(v.p)));
   const nuove = [];
   for(const c of candidati){
     if(nuove.length >= quante) break;
-    const posto = migliorPosto(stato.griglia, stato.parole, c.p, stato.N);
+    const attuale = riempimentoAttuale();
+    if(attuale.quota >= obiettivo) break;
+    const posto = migliorPosto(stato.griglia, stato.parole, c.p, stato.N, compatto ? attuale.riquadro : null);
     if(!posto) continue;
+    if(compatto && riempimentoPrevisto(attuale, c.p, posto) + 0.000001 < attuale.quota) continue;
     scriviSullaGriglia(stato.griglia, c.p, posto.riga, posto.col, posto.dir);
     const parola = Object.assign({}, c, { riga:posto.riga, col:posto.col, dir:posto.dir });
     stato.parole.push(parola);
     nuove.push(parola);
   }
+  return nuove;
+}
+
+/** Aggiunge parole allo schema già in gioco e ridisegna. */
+function aggiungiParole(quante){
+  let nuove = inserisciParole({ quante:quante });
+  if(!nuove.length) nuove = inserisciParole({ quante:quante, compatto:false });
   if(!nuove.length) return 0;
   numeraSchema();
   applicaAiuti(nuove, false);
@@ -1722,7 +1790,8 @@ function costruisciDocumento(perStampa){
     ".occhiello{font-family:system-ui,sans-serif;font-size:.8rem;color:#555;margin:0 0 18px}" +
     "table.schema{border-collapse:collapse;margin:0 auto 18px}" +
     "table.schema td{width:34px;height:34px;border:1px solid #111;position:relative;text-align:center;vertical-align:middle;font-size:18px;font-weight:700;font-family:system-ui,sans-serif}" +
-    "table.schema td.nera{background:#111}" +
+    (stato.nereVisibili ? "table.schema td.nera{background:#111}"
+                        : "table.schema td.nera{background:#fff;border-color:transparent}") +
     ".segno{position:absolute;top:1px;left:2px;font-size:9px;font-weight:400;color:#444}" +
     ".colonne{display:flex;gap:30px;flex-wrap:wrap}.colonne>div{flex:1 1 260px}" +
     "ul{margin:0;padding-left:1.1em;font-size:.94rem}li{margin-bottom:4px}" +
@@ -1925,6 +1994,7 @@ function creaCruciverba(){
   stato.titolo = $("titoloScelto").value.trim() || "Cruciverba del " + new Date().toLocaleDateString("it-IT", { day:"numeric", month:"long", year:"numeric" });
   stato.autore = $("autoreScelto").value.trim();
 
+  inserisciParole({ obiettivo:Number(valoreRadio("compattezza") || 0.62) });
   numeraSchema();
   applicaAiuti(stato.parole, true);
 
@@ -1932,8 +2002,9 @@ function creaCruciverba(){
   const q = riquadro(stato.parole);
   const nomeTipo = { normale:"normale", facilitato:"facilitato", crittografato:"crittografato" }[stato.tipo];
   $("titoloGioco").textContent = stato.titolo;
+  const pieno = Math.round(riempimentoAttuale().quota * 100);
   $("dettagliGioco").textContent = "Schema " + nomeTipo + ", difficoltà " + difficolta + ", griglia di " +
-    q.righe + " righe per " + q.colonne + " colonne" +
+    q.righe + " righe per " + q.colonne + " colonne, piena al " + pieno + " per cento" +
     (nomiCategorie.length ? ". Categorie: " + nomiCategorie.join(", ") + "." : ".") +
     (stato.autore ? " A cura di " + stato.autore + "." : "");
   $("bDefinizioni").hidden = stato.tipo !== "crittografato";
@@ -1997,6 +2068,11 @@ function collegaComandi(){
   $("bRivelaParola").addEventListener("click", rivelaParola);
   $("bVerificaParola").addEventListener("click", verificaParola);
   $("bVerificaTutto").addEventListener("click", verificaTutto);
+  $("bCaselleNere").addEventListener("click", () => {
+    stato.nereVisibili = !stato.nereVisibili;
+    $("bCaselleNere").textContent = stato.nereVisibili ? "Nascondi le caselle nere" : "Mostra le caselle nere";
+    disegnaGriglia();
+  });
   $("bPulisci").addEventListener("click", pulisciTutto);
   $("bSoluzione").addEventListener("click", mostraSoluzione);
   $("bStampa").addEventListener("click", stampa);
