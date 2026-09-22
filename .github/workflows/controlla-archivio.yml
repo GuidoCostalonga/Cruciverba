@@ -1,0 +1,25 @@
+name: Controlla l'archivio
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controlla:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preleva il codice
+        uses: actions/checkout@v5
+
+      - name: Prepara Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Archivio delle parole
+        run: node controlla.js
