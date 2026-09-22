@@ -1,6 +1,6 @@
 # CruciWord Creator
 
-Pagina pubblicata: https://guidocostalonga.github.io/cruciverba/
+Pagina pubblicata: https://guidocostalonga.github.io/Cruciverba/
 
 Applicazione web per creare cruciverba su misura: si scelgono le categorie,
 la difficoltà e il tipo di schema, il programma incrocia le parole, e poi si
