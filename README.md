@@ -20,6 +20,7 @@ installare nulla, senza connessione e senza librerie esterne.
 | Schema crittografato | Nessuna definizione in chiaro: ogni lettera diventa un numero, si parte da poche lettere regalate e la lettera scoperta si propaga a tutte le caselle con lo stesso numero |
 | Compattezza dello schema | Arioso, equilibrato o compatto: dopo le parole di partenza il programma ne aggiunge altre finché lo schema non raggiunge la densità scelta |
 | Caselle vuote | Si passa con un comando dallo schema libero, senza caselle nere disegnate, allo schema classico con il fondo nero |
+| Parole da collocare | Un comando mostra o nasconde l'elenco delle parole, in qualunque tipo di schema: acceso di partenza in quelli facilitati. L'elenco finisce anche nel documento stampato |
 | Suggerimenti | «Suggerisci una lettera» e «Rivela la parola» lavorano sulla parola selezionata |
 | Verifica | «Verifica la parola» e «Verifica tutto» segnano in verde le lettere giuste e in rosso quelle sbagliate |
 | Parole a caso | «Aggiungi una parola a caso» e «Riempi gli spazi vuoti» incrociano altre parole d'archivio negli spazi ancora liberi |
@@ -65,10 +66,12 @@ incrociarsi, il programma lo dice: non la scarta in silenzio.
 ## Controlli
 
 ```
-node controlla.js                         # archivio delle parole: doppioni, definizioni, regole di lingua
+node controlla.js         # archivio delle parole: doppioni, definizioni, regole di lingua
+node collaudo.js          # collaudo completo nel navigatore
+node collaudo-stampa.js   # stampa, bordi delle caselle ed elenco delle parole
 ```
 
-Il collaudo nel navigatore si esegue con `playwright-core` e il Chromium già
+I collaudi nel navigatore si eseguono con `playwright-core` e il Chromium già
 presente nell'ambiente: apre la pagina, crea i tre tipi di schema, scrive nelle
 caselle, chiede un suggerimento, verifica la soluzione e controlla che la
 console non riporti errori.

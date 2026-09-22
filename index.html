@@ -277,12 +277,24 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
   body{background:#fff;color:#000}
   .testata,.strumenti,footer,#pannelloCreazione,.contatori,.messaggio{display:none !important}
   .carta{box-shadow:none;border:0;padding:0}
-  .tavolo{grid-template-columns:1fr}
-  .cella{box-shadow:inset 0 0 0 1px #000}
-  .cella.vuota{background:#000}
-  .griglia.libera .cella.vuota{background:#fff;box-shadow:none}
+  .tavolo{grid-template-columns:1fr;gap:16px}
+  .telaio{overflow:visible}
+  /* Le ombre non vengono stampate: i bordi delle caselle sono bordi veri. */
+  .griglia{background:#fff;border:2px solid #000}
+  .cella{box-shadow:none;border:1px solid #000;background:#fff}
+  .cella.vuota{background:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .griglia.libera{border:0}
+  .griglia.libera .cella{box-shadow:none;border:1px solid #000}
+  .griglia.libera .cella.vuota{background:#fff;border-color:transparent}
   .cella.parola,.cella.attiva,.cella.giusta,.cella.sbagliata{background:#fff}
   .cella.attiva input{color:#000}
+  .cella .numero,.cella .codice{color:#000}
+  .elenco ol{max-height:none;overflow:visible}
+  .elenco h3,.elenco li{color:#000}
+  .elenco h3{border-bottom:1px solid #000}
+  .pannello{background:#fff;border:1px solid #000}
+  .serbatoio li,.legenda li{background:#fff;border:1px solid #000;color:#000}
+  .dettagli{color:#000}
 }
 </style>
 </head>
@@ -420,6 +432,7 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
       <button type="button" id="bVerificaTutto" class="principale">Verifica tutto</button>
       <button type="button" id="bCompleta">Riempi gli spazi vuoti</button>
       <button type="button" id="bParolaCasuale">Aggiungi una parola a caso</button>
+      <button type="button" id="bSerbatoio" class="tenue">Mostra le parole da collocare</button>
       <button type="button" id="bCaselleNere" class="tenue">Mostra le caselle nere</button>
       <button type="button" id="bPulisci" class="tenue">Cancella tutto</button>
       <button type="button" id="bSoluzione" class="tenue">Mostra la soluzione</button>
@@ -1195,7 +1208,7 @@ const stato = {
   sel:{ riga:0, col:0, dir:"O" },
   caselle:new Map(), campi:new Map(),
   codice:new Map(), prossimoCodice:1, letterePalesi:new Set(),
-  definizioniVisibili:true, nereVisibili:false,
+  definizioniVisibili:true, nereVisibili:false, serbatoioVisibile:false,
   avvio:0, cronometro:0
 };
 
@@ -1496,7 +1509,10 @@ function disegnaDefinizioni(){
 
 function disegnaSerbatoio(){
   const pannello = $("pannelloSerbatoio");
-  pannello.hidden = stato.tipo !== "facilitato";
+  pannello.hidden = !stato.serbatoioVisibile;
+  const comando = $("bSerbatoio");
+  if(comando) comando.textContent = stato.serbatoioVisibile
+    ? "Nascondi le parole da collocare" : "Mostra le parole da collocare";
   if(pannello.hidden) return;
   const elenco = $("serbatoio");
   elenco.innerHTML = "";
@@ -1770,6 +1786,14 @@ function elencoDefinizioni(){
   return html + "</div>";
 }
 
+/** Elenco delle parole da collocare per il documento da stampare. */
+function elencoParole(){
+  if(!stato.serbatoioVisibile) return "";
+  const parole = stato.parole.map(w => w.p).sort((a, b) => a.length - b.length || a.localeCompare(b, "it"));
+  return "<h3>Parole da collocare</h3><ul class=\"parole\">" +
+    parole.map(p => "<li>" + p + "</li>").join("") + "</ul>";
+}
+
 function costruisciDocumento(perStampa){
   const titolo = stato.titolo || "Cruciverba";
   const nomeTipo = { normale:"schema normale", facilitato:"schema facilitato", crittografato:"schema crittografato" }[stato.tipo];
@@ -1798,13 +1822,16 @@ function costruisciDocumento(perStampa){
     "ul.codici{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none}" +
     "ul.codici li{border:1px solid #111;border-radius:6px;padding:3px 7px;font-family:system-ui,sans-serif;font-size:.8rem}" +
     "ul.codici li b{display:block;color:#555;font-weight:400}" +
+    "ul.parole{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none;margin-bottom:18px}" +
+    "ul.parole li{border:1px solid #111;border-radius:999px;padding:3px 9px;font-family:system-ui,sans-serif;font-size:.8rem;letter-spacing:.06em}" +
+    "@media print{table.schema td.nera{-webkit-print-color-adjust:exact;print-color-adjust:exact}}" +
     ".soluzione{font-size:.82rem;color:#333;border-top:1px solid #bbb;padding-top:10px;margin-top:26px;font-family:system-ui,sans-serif}" +
     "@media print{body{padding:0}.soluzione{page-break-before:always}}" +
     "</style></head><body><div class=\"foglio\">" +
     "<h1>" + scappa(titolo) + "</h1>" +
     '<p class="occhiello">' + nomeTipo + ", " + stato.parole.length + " parole" +
     (stato.autore ? " &middot; a cura di " + scappa(stato.autore) : "") + "</p>" +
-    tabellaSchema(false) + legenda + elencoDefinizioni() +
+    tabellaSchema(false) + legenda + elencoParole() + elencoDefinizioni() +
     '<div class="soluzione"><h2>Soluzione</h2>' + tabellaSchema(true) + "<p>" + soluzione + "</p></div>" +
     "</div>" + (perStampa ? "<script>window.onload=function(){window.print()}<\/script>" : "") +
     "</body></html>";
@@ -1991,6 +2018,7 @@ function creaCruciverba(){
   stato.prossimoCodice = 1;
   stato.letterePalesi = new Set();
   stato.definizioniVisibili = stato.tipo !== "crittografato";
+  stato.serbatoioVisibile = stato.tipo === "facilitato";
   stato.titolo = $("titoloScelto").value.trim() || "Cruciverba del " + new Date().toLocaleDateString("it-IT", { day:"numeric", month:"long", year:"numeric" });
   stato.autore = $("autoreScelto").value.trim();
 
@@ -2068,6 +2096,10 @@ function collegaComandi(){
   $("bRivelaParola").addEventListener("click", rivelaParola);
   $("bVerificaParola").addEventListener("click", verificaParola);
   $("bVerificaTutto").addEventListener("click", verificaTutto);
+  $("bSerbatoio").addEventListener("click", () => {
+    stato.serbatoioVisibile = !stato.serbatoioVisibile;
+    disegnaSerbatoio();
+  });
   $("bCaselleNere").addEventListener("click", () => {
     stato.nereVisibili = !stato.nereVisibili;
     $("bCaselleNere").textContent = stato.nereVisibili ? "Nascondi le caselle nere" : "Mostra le caselle nere";
