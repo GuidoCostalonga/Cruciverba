@@ -91,6 +91,16 @@ const verifica = (n, ok, extra) => { esiti.push(ok); console.log((ok ? 'OK   ' :
     contorniDocumento.celle + ' caselle, ' + contorniDocumento.scoperte + ' scoperte');
   await documento.screenshot({ path: C + 'contorni-documento.png', fullPage: true });
 
+  // il documento deve uscire su tre fogli: schema, definizioni, soluzione
+  const sezioni = await documento.$$eval('.pagina', e => e.map(x => (x.querySelector('h1,h2') || {}).textContent || ''));
+  verifica('il documento si divide in schema, definizioni e soluzione',
+    sezioni.length === 3 && /Definizioni/.test(sezioni[1]) && /Soluzione/.test(sezioni[2]),
+    sezioni.join(' | '));
+  const fileStampa = C + 'collaudo-stampa.pdf';
+  await documento.pdf({ path: fileStampa, format: 'A4', margin:{ top:'12mm', bottom:'12mm', left:'12mm', right:'12mm' } });
+  const pagine = (require('fs').readFileSync(fileStampa, 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  verifica('la stampa occupa tre pagine', pagine === 3, pagine + ' pagine');
+
   await b.close();
   const falliti = esiti.filter(e => !e).length;
   console.log('\nProve superate: ' + (esiti.length - falliti) + ' su ' + esiti.length);

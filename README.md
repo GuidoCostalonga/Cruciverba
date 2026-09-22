@@ -25,6 +25,7 @@ installare nulla, senza connessione e senza librerie esterne.
 | Verifica | «Verifica la parola» e «Verifica tutto» segnano in verde le lettere giuste e in rosso quelle sbagliate |
 | Parole a caso | «Aggiungi una parola a caso» e «Riempi gli spazi vuoti» incrociano altre parole d'archivio negli spazi ancora liberi |
 | Esportazione | HTML (pagina autonoma con schema, definizioni e soluzione), PDF tramite la stampa del navigatore, CSV apribile con un foglio di calcolo |
+| Stampa su tre fogli | Primo foglio lo schema da riempire, secondo foglio le definizioni, terzo foglio la soluzione: si consegna lo schema senza consegnare le risposte |
 
 Si scrive con la tastiera: le frecce spostano il cursore, il tasto di ritorno
 cancella, la barra spaziatrice passa dalla lettura orizzontale a quella

@@ -293,7 +293,10 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
   .cella.parola,.cella.attiva,.cella.giusta,.cella.sbagliata{background:#fff}
   .cella.attiva input{color:#000}
   .cella .numero,.cella .codice{color:#000}
+  .telaio{page-break-after:always;break-after:page}
+  .pannello{page-break-inside:avoid;break-inside:avoid}
   .elenco ol{max-height:none;overflow:visible}
+  .elenco li{page-break-inside:avoid;break-inside:avoid}
   .elenco h3,.elenco li{color:#000}
   .elenco h3{border-bottom:1px solid #000}
   .pannello{background:#fff;border:1px solid #000}
@@ -1812,6 +1815,7 @@ function costruisciDocumento(perStampa){
   const titolo = stato.titolo || "Cruciverba";
   const nomeTipo = { normale:"schema normale", facilitato:"schema facilitato", crittografato:"schema crittografato" }[stato.tipo];
   const soluzione = stato.parole.map(w => w.num + " " + (w.dir === "O" ? "orizzontale" : "verticale") + ": " + w.p).join(" &middot; ");
+  const definizioni = elencoDefinizioni();
   let legenda = "";
   if(stato.tipo === "crittografato"){
     const righe = Array.from(stato.codice.entries()).sort((a, b) => a[1] - b[1])
@@ -1842,14 +1846,31 @@ function costruisciDocumento(perStampa){
     "ul.parole{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none;margin-bottom:18px}" +
     "ul.parole li{border:1px solid #111;border-radius:999px;padding:3px 9px;font-family:system-ui,sans-serif;font-size:.8rem;letter-spacing:.06em}" +
     "@media print{table.schema td.nera{-webkit-print-color-adjust:exact;print-color-adjust:exact}}" +
-    ".soluzione{font-size:.82rem;color:#333;border-top:1px solid #bbb;padding-top:10px;margin-top:26px;font-family:system-ui,sans-serif}" +
-    "@media print{body{padding:0}.soluzione{page-break-before:always}}" +
+    ".pagina{position:relative}" +
+    ".pagina h2{margin-top:0}" +
+    ".elencoSoluzione{font-size:.82rem;color:#333;font-family:system-ui,sans-serif;margin-top:14px}" +
+    "@media screen{.pagina + .pagina{border-top:1px solid #ccc;padding-top:26px;margin-top:30px}}" +
+    "@media print{body{padding:0}" +
+    ".pagina{page-break-after:always;break-after:page}" +
+    ".pagina:last-child{page-break-after:auto;break-after:auto}" +
+    "table.schema{page-break-inside:avoid;break-inside:avoid}" +
+    ".colonne>div{page-break-inside:auto}" +
+    "li{page-break-inside:avoid;break-inside:avoid}}" +
     "</style></head><body><div class=\"foglio\">" +
-    "<h1>" + scappa(titolo) + "</h1>" +
-    '<p class="occhiello">' + nomeTipo + ", " + stato.parole.length + " parole" +
-    (stato.autore ? " &middot; a cura di " + scappa(stato.autore) : "") + "</p>" +
-    tabellaSchema(false) + legenda + elencoParole() + elencoDefinizioni() +
-    '<div class="soluzione"><h2>Soluzione</h2>' + tabellaSchema(true) + "<p>" + soluzione + "</p></div>" +
+    /* Primo foglio: lo schema da riempire. */
+    '<div class="pagina">' +
+      "<h1>" + scappa(titolo) + "</h1>" +
+      '<p class="occhiello">' + nomeTipo + ", " + stato.parole.length + " parole" +
+      (stato.autore ? " &middot; a cura di " + scappa(stato.autore) : "") + "</p>" +
+      tabellaSchema(false) + legenda + elencoParole() +
+    "</div>" +
+    /* Secondo foglio: le definizioni. */
+    (definizioni
+      ? '<div class="pagina"><p class="occhiello">' + scappa(titolo) + "</p><h2>Definizioni</h2>" + definizioni + "</div>"
+      : "") +
+    /* Terzo foglio: la soluzione. */
+    '<div class="pagina"><p class="occhiello">' + scappa(titolo) + "</p><h2>Soluzione</h2>" +
+      tabellaSchema(true) + '<p class="elencoSoluzione">' + soluzione + "</p></div>" +
     "</div>" + (perStampa ? "<script>window.onload=function(){window.print()}<\/script>" : "") +
     "</body></html>";
 }
