@@ -55,6 +55,42 @@ const verifica = (n, ok, extra) => { esiti.push(ok); console.log((ok ? 'OK   ' :
   await q.click('#bSerbatoio');
   verifica('anche lo schema normale può mostrare le parole', await q.isVisible('#pannelloSerbatoio'));
 
+  // ogni lato di ogni casella deve risultare disegnato, nella pagina e nel documento
+  const controllaContorni = async (pagina, selettorePiena, selettoreGriglia) => pagina.evaluate(([sp, sg]) => {
+    const celle = Array.from(document.querySelectorAll(sp));
+    const riquadro = celle.map(e => e.getBoundingClientRect());
+    const larghezza = (e, lato) => parseFloat(getComputedStyle(e)["border" + lato + "Width"]) || 0;
+    const vicina = (rettangolo, dove) => riquadro.findIndex(r =>
+      dove === "destra" ? Math.abs(r.left - rettangolo.right) < 2 && Math.abs(r.top - rettangolo.top) < 2
+                        : Math.abs(r.top - rettangolo.bottom) < 2 && Math.abs(r.left - rettangolo.left) < 2);
+    let scoperte = 0;
+    celle.forEach((e, i) => {
+      const r = riquadro[i];
+      const alto = larghezza(e, "Top") > 0;
+      const sinistra = larghezza(e, "Left") > 0;
+      const destra = larghezza(e, "Right") > 0 || vicina(r, "destra") >= 0;
+      const basso = larghezza(e, "Bottom") > 0 || vicina(r, "sotto") >= 0;
+      if(!(alto && sinistra && destra && basso)) scoperte++;
+    });
+    return { celle: celle.length, scoperte: scoperte, griglia: document.querySelectorAll(sg).length };
+  }, [selettorePiena, selettoreGriglia]);
+
+  await p.emulateMedia({ media: 'print' });
+  const contorniPagina = await controllaContorni(p, '.cella:not(.vuota)', '.griglia');
+  verifica('in stampa nessun contorno resta scoperto nella pagina',
+    contorniPagina.celle > 0 && contorniPagina.scoperte === 0,
+    contorniPagina.celle + ' caselle, ' + contorniPagina.scoperte + ' scoperte');
+  await p.emulateMedia({ media: 'screen' });
+
+  const documento = await b.newPage({ viewport:{ width:1000, height:1400 } });
+  await documento.setContent(await p.evaluate(() => costruisciDocumento(false)));
+  await documento.emulateMedia({ media: 'print' });
+  const contorniDocumento = await controllaContorni(documento, 'table.schema td.piena', 'table.schema');
+  verifica('nel documento esportato nessun contorno resta scoperto',
+    contorniDocumento.celle > 0 && contorniDocumento.scoperte === 0,
+    contorniDocumento.celle + ' caselle, ' + contorniDocumento.scoperte + ' scoperte');
+  await documento.screenshot({ path: C + 'contorni-documento.png', fullPage: true });
+
   await b.close();
   const falliti = esiti.filter(e => !e).length;
   console.log('\nProve superate: ' + (esiti.length - falliti) + ' su ' + esiti.length);

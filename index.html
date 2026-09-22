@@ -279,13 +279,17 @@ footer{border-top:1px solid var(--bordo);padding:20px 0 40px;color:var(--tenue);
   .carta{box-shadow:none;border:0;padding:0}
   .tavolo{grid-template-columns:1fr;gap:16px}
   .telaio{overflow:visible}
-  /* Le ombre non vengono stampate: i bordi delle caselle sono bordi veri. */
-  .griglia{background:#fff;border:2px solid #000}
-  .cella{box-shadow:none;border:1px solid #000;background:#fff}
+  /* Le ombre non vengono stampate: servono bordi veri. Ogni casella porta
+     il bordo superiore e sinistro, e quello destro o inferiore soltanto
+     quando la casella accanto non fa parte dello schema: così nessun
+     contorno resta scoperto e nessuna linea viene disegnata due volte. */
+  .griglia{background:#fff;border:0}
+  .cella{box-shadow:none !important;border:0;background:#fff}
+  .cella:not(.vuota){border-top:1px solid #000;border-left:1px solid #000}
+  .cella:not(.vuota).orloDestro{border-right:1px solid #000}
+  .cella:not(.vuota).orloBasso{border-bottom:1px solid #000}
   .cella.vuota{background:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .griglia.libera{border:0}
-  .griglia.libera .cella{box-shadow:none;border:1px solid #000}
-  .griglia.libera .cella.vuota{background:#fff;border-color:transparent}
+  .griglia.libera .cella.vuota{background:#fff}
   .cella.parola,.cella.attiva,.cella.giusta,.cella.sbagliata{background:#fff}
   .cella.attiva input{color:#000}
   .cella .numero,.cella .codice{color:#000}
@@ -1311,6 +1315,8 @@ function disegnaGriglia(){
         continue;
       }
       cella.className = "cella";
+      if(!dentroSchema(r, c + 1)) cella.classList.add("orloDestro");
+      if(!dentroSchema(r + 1, c)) cella.classList.add("orloBasso");
       const k = chiave(r, c);
       const numero = stato.numeri.get(k);
       if(numero && stato.tipo !== "crittografato"){
@@ -1755,6 +1761,11 @@ function scappa(testo){
   return String(testo).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/** Dice se quella posizione fa parte dello schema. */
+function dentroSchema(r, c){
+  return r >= 0 && c >= 0 && r < stato.N && c < stato.N && !!stato.griglia[r][c];
+}
+
 function tabellaSchema(conLettere){
   const q = riquadro(stato.parole);
   let html = '<table class="schema">';
@@ -1766,7 +1777,10 @@ function tabellaSchema(conLettere){
       const numero = stato.numeri.get(chiave(r, c));
       const etichetta = stato.tipo === "crittografato" ? stato.codice.get(lettera) : (numero || "");
       const dentro = conLettere ? lettera : (stato.date.has(chiave(r, c)) ? lettera : "");
-      html += '<td><span class="segno">' + etichetta + "</span>" + scappa(dentro) + "</td>";
+      let classi = "";
+      if(!dentroSchema(r, c + 1)) classi += " orloDestro";
+      if(!dentroSchema(r + 1, c)) classi += " orloBasso";
+      html += '<td class="piena' + classi + '"><span class="segno">' + etichetta + "</span>" + scappa(dentro) + "</td>";
     }
     html += "</tr>";
   }
@@ -1812,10 +1826,13 @@ function costruisciDocumento(perStampa){
     "h1{font-size:1.7rem;margin:0 0 4px}h2{font-size:1.1rem;margin:26px 0 8px}" +
     "h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;font-family:system-ui,sans-serif;margin:0 0 6px}" +
     ".occhiello{font-family:system-ui,sans-serif;font-size:.8rem;color:#555;margin:0 0 18px}" +
-    "table.schema{border-collapse:collapse;margin:0 auto 18px}" +
-    "table.schema td{width:34px;height:34px;border:1px solid #111;position:relative;text-align:center;vertical-align:middle;font-size:18px;font-weight:700;font-family:system-ui,sans-serif}" +
-    (stato.nereVisibili ? "table.schema td.nera{background:#111}"
-                        : "table.schema td.nera{background:#fff;border-color:transparent}") +
+    "table.schema{border-collapse:separate;border-spacing:0;margin:0 auto 18px}" +
+    "table.schema td{width:34px;height:34px;border:0;position:relative;text-align:center;vertical-align:middle;font-size:18px;font-weight:700;font-family:system-ui,sans-serif}" +
+    "table.schema td.piena{border-top:1px solid #111;border-left:1px solid #111}" +
+    "table.schema td.piena.orloDestro{border-right:1px solid #111}" +
+    "table.schema td.piena.orloBasso{border-bottom:1px solid #111}" +
+    (stato.nereVisibili ? "table.schema td.nera{background:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}"
+                        : "table.schema td.nera{background:#fff}") +
     ".segno{position:absolute;top:1px;left:2px;font-size:9px;font-weight:400;color:#444}" +
     ".colonne{display:flex;gap:30px;flex-wrap:wrap}.colonne>div{flex:1 1 260px}" +
     "ul{margin:0;padding-left:1.1em;font-size:.94rem}li{margin-bottom:4px}" +
